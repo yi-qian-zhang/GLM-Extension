@@ -1,6 +1,6 @@
-# PLM Memorization Experiment
+# GLM Memorization
 
-A framework for studying **memorization risks** when fine-tuning pretrained language models (PLMs) on genomic data. It measures how much a DNA language model memorizes its training data using canary sequences, perplexity analysis, extraction attacks, and membership inference.
+A framework for studying **memorization risks** when fine-tuning genomic language models (GLMs) on genomic data. It measures how much a DNA language model memorizes its training data using canary sequences, perplexity analysis, extraction attacks, and membership inference.
 
 Models and training setup follow **[Genome-Factory](http://arxiv.org/abs/2509.12266)** (an integrated library for tuning, deploying, and interpreting genomic foundation models). We use the same model backends—DNABERT-2, HyenaDNA, EVO—and the same conventions for tokenizers, LoRA targets, and installation. Genome-Factory recommends **training EVO and the rest of the models in separate environments**, so we provide two requirement files: a general one for non-EVO models and a dedicated one for EVO.
 
@@ -42,7 +42,7 @@ source venv_evo/bin/activate   # or: venv_evo\Scripts\activate on Windows
 git clone https://github.com/evo-design/evo.git
 cd evo
 pip install .
-cd ..   # return to PLM-Memorization root
+cd ..   # return to GLM-Memorization root
 
 # Install EVO-specific requirements (flash-attn, evo-model, etc.)
 pip install -r requirements_evo.txt
@@ -102,7 +102,7 @@ If `--data` is not provided, the experiment uses synthetic data (from the model 
 ## Project Structure
 
 ```
-PLM-Memorization/
+GLM-Memorization/
 ├── config/
 │   ├── simple_model_config.yaml   # Model: Built-in small transformer
 │   ├── dnabert_config.yaml       # Model: DNABERT-2 117M

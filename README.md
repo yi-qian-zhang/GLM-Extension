@@ -294,3 +294,14 @@ This code is for **responsible research** on memorization risks:
 
 - **General (non-EVO):** `requirements.txt` — PyTorch, Transformers, Datasets, Opacus (privacy), PEFT (LoRA), OmegaConf, PyYAML, scikit-learn, matplotlib, seaborn, tqdm, pytest, wandb, etc. Use this for the built-in simple model, DNABERT-2, and HyenaDNA.
 - **EVO:** `requirements_evo.txt` — EVO-specific stack (e.g. `evo-model`, Flash Attention, compatible PyTorch/Transformers). Use in a **separate** environment after installing [evo](https://github.com/evo-design/evo) from source, as recommended by Genome-Factory.
+
+## Citation
+
+```bibtex
+@article{nemecek2026quantifying,
+  title={Quantifying Memorization and Privacy Risks in Genomic Language Models},
+  author={Nemecek, Alexander and Li, Wenbiao and Jiang, Xiaoqian and Vaidya, Jaideep and Ayday, Erman},
+  journal={arXiv preprint arXiv:2603.08913},
+  year={2026}
+}
+```

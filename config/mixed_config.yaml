@@ -1,0 +1,27 @@
+# Dataset config: Mixed (half real, half synthetic)
+# Uses E. coli RefSeq for real half, synthetic generator for synthetic half.
+# This config contains ONLY the data section. Use with --data mixed.
+
+data:
+  mode: "mixed"
+  num_train_sequences: 1000
+  num_test_sequences: 200
+  sequence_length: 256
+  gc_content: 0.5
+  real_data:
+    source: "refseq"
+    fasta_path: null
+    accession: "GCF_000005845.2"
+    genome_dir: "data/genomes"
+    stride: 256
+    hf_dataset: null
+    hf_subset: null
+    hf_split: "train"
+    bed_path: null
+    test_split_ratio: 0.167
+  canaries:
+    enabled: true
+    num_canaries: 100
+    canary_length: 64
+    repetitions: [1, 5, 10, 20]
+    pattern: "CANARY"

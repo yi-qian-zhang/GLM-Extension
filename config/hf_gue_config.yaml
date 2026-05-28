@@ -1,0 +1,27 @@
+# Dataset config: HuggingFace GUE dataset
+# leannmlindsey/GUE, subset prom_300_all (300bp promoter sequences).
+# This config contains ONLY the data section. Use with --data hf_gue.
+
+data:
+  mode: "huggingface"
+  num_train_sequences: 1000
+  num_test_sequences: 200
+  sequence_length: 256
+  gc_content: 0.5
+  real_data:
+    source: "huggingface"
+    fasta_path: null
+    accession: null
+    genome_dir: "data/genomes"
+    stride: 256
+    hf_dataset: "leannmlindsey/GUE"
+    hf_subset: "prom_300_all"
+    hf_split: "train"
+    bed_path: null
+    test_split_ratio: 0.167
+  canaries:
+    enabled: true
+    num_canaries: 100
+    canary_length: 64
+    repetitions: [1, 5, 10, 20]
+    pattern: "CANARY"

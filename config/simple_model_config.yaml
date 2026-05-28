@@ -1,0 +1,89 @@
+# PLM Memorization Experiment — Simple (built-in) model
+# Lightweight transformer for fast experimentation; no HuggingFace download.
+
+experiment:
+  name: "plm_memorization_simple"
+  seed: 456 # 42, 123, 456
+  output_dir: "outputs"
+  device: "cpu"  # Use "auto" for GPU (mps on Mac, cuda on Linux)
+
+# Model: built-in SimpleDNALM (no external model)
+model:
+  name: "simple"
+  max_length: 512
+  use_lora: false  # LoRA for simple uses query/value; set true to test PEFT
+  lora:
+    r: 8
+    alpha: 16
+    dropout: 0.1
+    target_modules: ["query", "value"]
+
+# Data settings
+data:
+  mode: "synthetic"  # "synthetic" | "real" | "refseq" | "huggingface" | "mixed"
+  num_train_sequences: 1000
+  num_test_sequences: 200
+  sequence_length: 256
+  gc_content: 0.5
+  real_data:
+    source: "refseq"
+    fasta_path: null
+    accession: "GCF_000005845.2"
+    genome_dir: "data/genomes"
+    stride: 256
+    hf_dataset: "leannmlindsey/GUE"
+    hf_subset: "prom_300_all"
+    hf_split: "train"
+    bed_path: null
+    test_split_ratio: 0.167
+  canaries:
+    enabled: true
+    num_canaries: 100
+    canary_length: 64
+    repetitions: [1, 5, 10, 20]
+    pattern: "CANARY"
+
+# Training settings
+training:
+  epochs: 50
+  batch_size: 8
+  learning_rate: 2.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  gradient_accumulation_steps: 2
+  max_grad_norm: 1.0
+  early_stopping:
+    enabled: true
+    patience: 5
+    min_delta: 0.001
+  save_every_n_epochs: 0
+  save_best: true
+
+# Differential Privacy
+privacy:
+  enabled: false
+  epsilon: 8.0
+  delta: 1.0e-5
+  max_grad_norm: 1.0
+  noise_multiplier: null
+
+# Attack evaluation
+attacks:
+  perplexity:
+    enabled: true
+  extraction:
+    enabled: true
+    beam_width: 10
+    max_candidates: 1000
+  mia:
+    enabled: true
+    threshold_percentiles: [50, 75, 90, 95, 99]
+  reconstruction:
+    enabled: true
+    prefix_lengths: [0.25, 0.5, 0.75]
+
+# Visualization
+visualization:
+  save_plots: true
+  plot_format: "png"
+  dpi: 150

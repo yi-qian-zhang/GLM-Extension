@@ -41,6 +41,7 @@ ssh TJU_6004 "ls -la /data/wh/yqdata/GLM-Extension/outputs/"
 ## Git
 
 - git 操作（status/commit/push）只在本地做；服务器上的 `.git` 是独立的，不要在服务器上 commit。
+- **工作分支是 `glmex`**（2026-09-25 从 `main` 切出，已设 upstream 为 `origin/glmex`）。所有提交和推送都到 `glmex`，**不要直接推 `main`**。`main` 保持与上游原仓库一致，只作对照。
 - 本地仓库已设置 `core.autocrlf=false`、`core.eol=lf`，新文件一律用 LF 换行，不要写入 CRLF。
 
 ## 注意

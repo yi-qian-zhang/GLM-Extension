@@ -52,7 +52,7 @@ def score_ar(model, x: torch.Tensor, span: slice = ALL, batch: int = 512) -> tor
 
 
 @torch.no_grad()
-def _score_bidir(model, x: torch.Tensor, span: slice, mode: str, rows_per_batch: int = 4096) -> torch.Tensor:
+def _score_bidir(model, x: torch.Tensor, span: slice, mode: str, rows_per_batch: int = 2048) -> torch.Tensor:
     """Shared implementation for pll / prefix. One masked copy per scored position."""
     positions = list(range(WINDOW))[span]
     P = len(positions)

@@ -18,6 +18,7 @@ from pathlib import Path
 import torch
 
 from .data import build_dataset
+from .model import Backbone
 from .score import score_run
 from .train import parse_objective, train_cell
 
@@ -41,6 +42,10 @@ def main(argv=None):
     ap.add_argument("--pool", type=int, default=500)
     ap.add_argument("--floor_n", type=int, default=500)
     ap.add_argument("--smoke", action="store_true", help="tiny settings to shake out bugs")
+    ap.add_argument("--checkpoint", default="best", choices=["best", "final"],
+                    help="checkpoint to score; on iid random data val-loss selection picks the LEAST "
+                         "memorized epoch, so use final for memorization measurements")
+    ap.add_argument("--score_only", action="store_true", help="skip training; load <checkpoint>.pt from the run dir")
     args = ap.parse_args(argv)
 
     if args.smoke:
@@ -64,23 +69,33 @@ def main(argv=None):
     print(f"[{name}] data: train={ds.train.shape} val={ds.val.shape} test={ds.test.shape} "
           f"probes={len(ds.probes)} ({len(ds.members())} member, {len(ds.nonmembers())} non-member)", flush=True)
 
-    model, summary = train_cell(ds, args.objective, args.seed, out_dir, device,
-                                epochs=args.epochs, batch=args.batch, lr=args.lr)
-    print(f"[{name}] trained: {summary['n_params']/1e6:.2f}M params, best val "
-          f"{summary['best_val_loss_nats']:.4f} nats @ epoch {summary['best_epoch']}, "
-          f"{summary['total_train_sec']:.0f}s", flush=True)
+    if args.score_only:
+        model = Backbone(causal=(kind == "ar")).to(device)
+        summary = json.loads((out_dir / "train_summary.json").read_text(encoding="utf-8"))
+        print(f"[{name}] score-only: loading {args.checkpoint}.pt", flush=True)
+    else:
+        model, summary = train_cell(ds, args.objective, args.seed, out_dir, device,
+                                    epochs=args.epochs, batch=args.batch, lr=args.lr)
+        print(f"[{name}] trained: {summary['n_params']/1e6:.2f}M params, best val "
+              f"{summary['best_val_loss_nats']:.4f} nats @ epoch {summary['best_epoch']}, "
+              f"{summary['total_train_sec']:.0f}s", flush=True)
+    if args.score_only or args.checkpoint != "best":
+        model.load_state_dict(torch.load(out_dir / f"{args.checkpoint}.pt", map_location=device))
+    model.eval()
+    scores_name = "scores.json" if args.checkpoint == "best" else f"scores_{args.checkpoint}.json"
 
     t1 = time.time()
     scores = score_run(model, kind, ds, device, pool_size=args.pool, seed=args.seed, floor_n=args.floor_n)
     scores["train_summary"] = summary
     scores["score_sec"] = time.time() - t1
     scores["total_sec"] = time.time() - t0
-    (out_dir / "scores.json").write_text(json.dumps(scores, indent=1), encoding="utf-8")
+    scores["checkpoint"] = args.checkpoint
+    (out_dir / scores_name).write_text(json.dumps(scores, indent=1), encoding="utf-8")
     for f in scores["floors"]:
         flag = "OK " if f["floor_ok"] else "VIOLATION"
         print(f"[{name}] floor {f['scorer']:6s}: {f['bits_per_nt_mean']:.4f} bits/nt "
               f"(ppl {f['perplexity']:.4f})  {flag}", flush=True)
-    print(f"[{name}] done in {scores['total_sec']:.0f}s -> {out_dir/'scores.json'}", flush=True)
+    print(f"[{name}] done in {scores['total_sec']:.0f}s -> {out_dir/scores_name}", flush=True)
 
 
 if __name__ == "__main__":

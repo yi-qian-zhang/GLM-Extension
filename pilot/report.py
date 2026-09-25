@@ -24,9 +24,9 @@ except Exception:  # scipy is optional
     mannwhitneyu = spearmanr = None
 
 
-def load_runs(root: Path):
+def load_runs(root: Path, scores_name: str = "scores.json"):
     runs = {}
-    for f in sorted(root.glob("*/scores.json")):
+    for f in sorted(root.glob(f"*/{scores_name}")):
         if "smoke" in str(f):
             continue
         runs[f.parent.name] = json.loads(f.read_text(encoding="utf-8"))
@@ -68,12 +68,14 @@ def fmt_tier(d):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default="outputs/pilot")
+    ap.add_argument("--scores_name", default="scores.json")
     args = ap.parse_args(argv)
     root = Path(args.root)
-    runs = load_runs(root)
+    runs = load_runs(root, args.scores_name)
+    suffix = "" if args.scores_name == "scores.json" else "_" + args.scores_name.replace("scores_", "").replace(".json", "")
     if not runs:
         print("no runs found under", root); return 1
-    md = ["# Gate 1 report", "", f"runs: {', '.join(runs)}", ""]
+    md = ["# Gate 1 report", "", f"root: {root}   scores file: {args.scores_name}", f"runs: {', '.join(runs)}", ""]
     summary = {}
 
     md += ["## Training and throughput", "", "| run | params | best val (bits/pred) | epoch | train s | score s | MFU (last epoch) |", "|---|---|---|---|---|---|---|"]

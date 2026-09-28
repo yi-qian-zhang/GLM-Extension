@@ -46,18 +46,22 @@ def summarize(r, tier, host):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--root", default="outputs/traj1")
+    ap.add_argument("--root", nargs="+", default=["outputs/traj1"],
+                    help="one or more sweep dirs; with several, runs are tagged by dir name and the outputs go to the first")
     args = ap.parse_args(argv)
-    root = Path(args.root)
+    roots = [Path(r) for r in args.root]
+    root = roots[0]
     rows = []
-    for d in sorted(root.iterdir()):
+    dirs = [(r, d) for r in roots for d in sorted(r.iterdir())]
+    for rt, d in dirs:
         m = RUN.fullmatch(d.name) if d.is_dir() else None
         if not m:
             continue
         for f in sorted(d.glob("scores_ep*.json"), key=lambda p: int(p.stem.split("ep")[1])):
             r = json.loads(f.read_text(encoding="utf-8"))
             e = r.get("epoch") or int(f.stem.split("ep")[1])
-            row = {"tok": m["tok"], "obj": m["obj"], "seed": int(m["seed"]), "epoch": e,
+            obj = m["obj"] if len(roots) == 1 else f'{m["obj"]}[{rt.name}]'
+            row = {"tok": m["tok"], "obj": obj, "seed": int(m["seed"]), "epoch": e,
                    "floor": r["floors"][0]["bits_per_nt_mean"]}
             for t in (1, 4, 16):
                 s = summarize(r, t, "train")
@@ -67,9 +71,9 @@ def main(argv=None):
             row["fp"] = s0[1] if s0 else float("nan")
             rows.append(row)
     if not rows:
-        print("no snapshots under", root); return 1
+        print("no snapshots under", roots); return 1
 
-    md = [f"# Training trajectory — {root}", "",
+    md = [f"# Training trajectory — {', '.join(map(str, roots))}", "",
           "floor = held-out bits/nt (2.000 = generalizes as well as possible on random data; higher = overfit). "
           "b/r/x = probe bits/nt / rank-1 / exact-extraction at tier r (training host). fp = non-member rank-1 (false positives).", "",
           "| tok | obj | seed | epoch | floor | b1 | b4 | b16 | r1 | r4 | r16 | x1 | x4 | x16 | fp |",

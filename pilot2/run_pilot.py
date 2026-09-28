@@ -49,6 +49,8 @@ def main(argv=None):
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--save_epochs", default="", help="comma list of 1-indexed epochs to snapshot, e.g. 1,2,5,10")
     ap.add_argument("--score_snapshots", action="store_true", help="also score every saved ep<N>.pt -> scores_ep<N>.json")
+    ap.add_argument("--d_ff", type=int, default=None, help="capacity control: feed-forward width (default 4*d)")
+    ap.add_argument("--emb_rank", type=int, default=None, help="capacity control: factorized tied embedding rank")
     ap.add_argument("--keep_snapshots", action="store_true", help="keep ep<N>.pt after scoring (default: delete; disk is shared)")
     args = ap.parse_args(argv)
     if args.smoke:
@@ -73,13 +75,14 @@ def main(argv=None):
     print(f"[{name}] tokenizer {tok.name}: k={tok.k}, vocab={tok.vocab_size}, {tok.n_tokens} tok/window; "
           f"train={ds.train.shape} probes={len(ds.probes)}", flush=True)
 
+    model_kw = {k: v for k, v in (("d_ff", args.d_ff), ("emb_rank", args.emb_rank)) if v}
     if args.score_only:
-        model = Backbone(tok.vocab_size, tok.n_tokens + 1, causal=(kind == "ar")).to(device)
+        model = Backbone(tok.vocab_size, tok.n_tokens + 1, causal=(kind == "ar"), **model_kw).to(device)
         summary = json.loads((out_dir / "train_summary.json").read_text(encoding="utf-8"))
     else:
         model, summary = train_cell(ds, tok, args.objective, args.seed, out_dir, device,
                                     epochs=args.epochs, batch=args.batch, lr=args.lr, max_steps=args.max_steps,
-                                    save_epochs=[int(e) for e in args.save_epochs.split(',') if e])
+                                    save_epochs=[int(e) for e in args.save_epochs.split(',') if e], model_kw=model_kw)
         print(f"[{name}] trained {summary['n_params']/1e6:.2f}M ({summary['n_params_non_embedding']/1e6:.2f}M non-emb), "
               f"{summary['steps']} steps, {summary['supervised_tokens_seen']/1e6:.1f}M supervised tokens, "
               f"{summary['total_train_sec']:.0f}s", flush=True)

@@ -84,9 +84,11 @@ def eval_loss(model, tok, data_tok: np.ndarray, kind, p, device, batch=256, seed
 def train_cell(ds: Dataset, tok: KmerTokenizer, objective: str, seed: int, out_dir: Path,
                device: str = "cuda", epochs: int = 20, batch: int = 64, lr: float = 3e-4,
                warmup: int = 100, log_every: int = 50, dropout: float = 0.0,
-               max_steps: int | None = None, save_epochs=None):
+               max_steps: int | None = None, save_epochs=None, model_kw=None):
     """max_steps: optional hard cap on optimizer steps (fixed-supervised-token budget runs).
-    save_epochs: iterable of 1-indexed epochs at which to save ep<N>.pt snapshots (training trajectory)."""
+    save_epochs: iterable of 1-indexed epochs at which to save ep<N>.pt snapshots (training trajectory).
+    model_kw: extra Backbone kwargs (d_ff, emb_rank) for capacity-matched controls."""
+    model_kw = {k: v for k, v in (model_kw or {}).items() if v}
     save_epochs = set(save_epochs or ())
     out_dir.mkdir(parents=True, exist_ok=True)
     kind, p = parse_objective(objective)
@@ -94,7 +96,7 @@ def train_cell(ds: Dataset, tok: KmerTokenizer, objective: str, seed: int, out_d
     np.random.seed(seed)
     train_tok = tok.encode(ds.train)          # pre-tokenize once
     val_tok = tok.encode(ds.val)
-    model = Backbone(tok.vocab_size, tok.n_tokens + 1, causal=(kind == "ar"), dropout=dropout).to(device)
+    model = Backbone(tok.vocab_size, tok.n_tokens + 1, causal=(kind == "ar"), dropout=dropout, **model_kw).to(device)
     n_params = model.n_params()
     opt = torch.optim.AdamW(model.parameters(), lr=lr, betas=(0.9, 0.95), weight_decay=0.01)
     steps_per_epoch = math.ceil(len(train_tok) / batch)
@@ -157,7 +159,7 @@ def train_cell(ds: Dataset, tok: KmerTokenizer, objective: str, seed: int, out_d
     torch.save(model.state_dict(), out_dir / "final.pt")
     summary = {
         "objective": objective, "tokenizer": tok.name, "k": tok.k, "vocab_size": tok.vocab_size,
-        "seed": seed, "n_params": n_params, "n_params_non_embedding": model.n_params(non_embedding=True),
+        "seed": seed, "model_kw": model_kw, "n_params": n_params, "n_params_non_embedding": model.n_params(non_embedding=True),
         "epochs": epoch + 1, "steps": step, "batch": batch, "lr": lr,
         "best_val_loss_nats": best, "best_epoch": best_epoch,
         "total_train_sec": time.time() - t_start, "tokens_seen": tokens_seen,

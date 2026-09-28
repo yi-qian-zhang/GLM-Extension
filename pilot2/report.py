@@ -170,8 +170,8 @@ def main(argv=None):
     md += ["", "> Note on Q1 as originally planned: applying PLL to a *causal* model is a null check — the causal mask "
            "already hides every position to the right, so masking the target changes nothing and PLL reduces exactly "
            "to AR scoring. The consistency check is therefore run on the MLM model between its two scorers."]
-    (root / "gate1_report.md").write_text("\n".join(md), encoding="utf-8")
-    (root / "gate1_summary.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
+    (root / f"gate1_report{suffix}.md").write_text("\n".join(md), encoding="utf-8")
+    (root / f"gate1_summary{suffix}.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
     print("\n".join(md))
     return 0
 

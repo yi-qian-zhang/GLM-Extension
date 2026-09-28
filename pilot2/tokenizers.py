@@ -67,7 +67,43 @@ class KmerTokenizer:
         return self.vocab_size * d_model + max_len * d_model
 
 
+class SpacedKmerTokenizer(KmerTokenizer):
+    """k-mer vocabulary at char-level sequence length (tests the sequence-length hypothesis).
+
+    Each k-mer token is followed by k-1 FILL tokens, so a window is window_nt
+    positions long exactly like char, while the vocabulary and the information
+    per content token are those of the k-mer tokenizer. FILL is deterministic
+    (zero information); scorers skip it and extraction inserts it without asking
+    the model. AR only: masking FILL positions is meaningless.
+    """
+
+    def __init__(self, k: int, window_nt: int):
+        super().__init__(k, window_nt)
+        self.n_tokens = window_nt                   # one position per nucleotide
+        self.fill_id = N_SPECIAL + self.n_content   # after the content ids, so content_ids is unchanged
+        self.vocab_size = self.fill_id + 1
+        self.name = f"{k}mersp"
+
+    def encode(self, nt):
+        B, L = nt.shape
+        out = np.full((B, L), self.fill_id, dtype=np.int64)
+        out[:, ::self.k] = super().encode(nt)
+        return out
+
+    def decode(self, tok):
+        return super().decode(tok[:, ::self.k])
+
+    def nt_to_tok(self, nt_pos: int) -> int:
+        assert nt_pos % self.k == 0, (nt_pos, self.k)
+        return nt_pos
+
+    def is_fill(self, pos: int) -> bool:
+        return pos % self.k != 0
+
+
 def get_tokenizer(name: str, window_nt: int) -> KmerTokenizer:
+    if name.endswith("mersp"):
+        return SpacedKmerTokenizer(int(name[:-5]), window_nt)
     if name == "char":
         return KmerTokenizer(1, window_nt)
     if name.endswith("mer"):

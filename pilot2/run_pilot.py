@@ -64,6 +64,7 @@ def main(argv=None):
     torch.cuda.set_device(args.gpu)
     kind, _ = parse_objective(args.objective)
     tok = get_tokenizer(args.tokenizer, WINDOW)
+    assert kind == "ar" or not hasattr(tok, "fill_id"), "spaced k-mer tokenizers are AR only"
     name = f"{tok.name}_{args.objective.replace('@', '')}_s{args.seed}"
     out_dir = Path(args.out) / name
     out_dir.mkdir(parents=True, exist_ok=True)

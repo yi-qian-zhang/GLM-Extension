@@ -37,6 +37,8 @@ def score_ar(model, tok: KmerTokenizer, x_tok: torch.Tensor, span: slice, batch:
         with torch.autocast("cuda", dtype=torch.bfloat16):
             logits = model(xb[:, :-1])
         lp = _log2_softmax(logits).gather(-1, xb[:, 1:, None])[..., 0]
+        if hasattr(tok, "fill_id"):  # spaced k-mers: FILL carries no information, do not score it
+            lp = lp * (xb[:, 1:] != tok.fill_id)
         out.append(lp[:, span].sum(-1))
     return torch.cat(out)
 
@@ -121,7 +123,12 @@ def extract_prefix(model, tok, kind, probe: Probe, host: np.ndarray, device, k_n
     if kind == "ar":
         ctx = with_bos(xt[None, :start], tok.bos_id)
         gen = []
-        for _ in range(end - start):
+        for pos in range(start, end):
+            if hasattr(tok, "is_fill") and tok.is_fill(pos):
+                nxt = torch.tensor(tok.fill_id, device=device)
+                gen.append(nxt)
+                ctx = torch.cat([ctx, nxt.view(1, 1)], dim=1)
+                continue
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 logits = model(ctx)[0, -1].float()
             nxt = content[logits[content].argmax()]

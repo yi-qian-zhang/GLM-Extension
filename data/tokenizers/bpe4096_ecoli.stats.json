@@ -1,0 +1,21 @@
+{
+ "vocab_size": 4096,
+ "trained_on": "data/genomes/ecoli_K12_MG1655.fna",
+ "n_train_windows": 16116,
+ "k_on_training_corpus": {
+  "n_seqs": 5000,
+  "tokens_per_window_mean": 57.474,
+  "tokens_per_window_std": 2.061970901831546,
+  "k_nt_per_token": 5.010961478233636,
+  "ppl_floor_per_token_if_uniform": 1039.6793643227347
+ },
+ "k_on_uniform_random_dna": {
+  "n_seqs": 2000,
+  "tokens_per_window_mean": 61.194,
+  "tokens_per_window_std": 2.0828739760244734,
+  "k_nt_per_token": 4.706343759192078,
+  "ppl_floor_per_token_if_uniform": 681.555587944295
+ },
+ "roundtrip_ok": true,
+ "longest_token_nt": 23
+}

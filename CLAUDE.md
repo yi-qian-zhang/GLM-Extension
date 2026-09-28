@@ -28,7 +28,7 @@
   ```
 
 - **本项目的 conda 环境：`glm`**（位于 `/data/qsj/conda_envs/glm`，2026-09-25 验证）。Python 3.10.18，torch 2.1.1+cu121，CUDA 12.1，驱动 530.30.02，4 卡可见，bf16 可用，单卡 bf16 矩阵乘约 88 TFLOPS。已装：transformers 4.29.2、tokenizers 0.13.3、peft 0.13.2、opacus 1.4.0、biopython 1.86、numpy 1.24.3、scikit-learn 1.5.1、datasets 2.19.1。EVO 专用环境尚未创建（需要时按 `requirements/requirements_evo.txt` 另建）。
-- 服务器多人共用，`/data` 43T 已用 87%；实验输出放 `outputs/`，checkpoint 只存 final，不存中间轮次。
+- 服务器多人共用，`/data` 43T 已用 87%；实验输出放 `outputs/`，checkpoint 只存 final，不存中间轮次。训练轨迹实验的 `ep<N>.pt` 快照在打分后自动删除（`pilot2/run_pilot.py --score_snapshots`，除非加 `--keep_snapshots`）。服务器上也有别人的 GPU 任务，启动前先 `nvidia-smi` 看空卡，用 `GPUS="2 3"` 指定。
 
 ## 不同步的内容（在服务器上直接看）
 

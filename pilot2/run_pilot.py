@@ -47,6 +47,9 @@ def main(argv=None):
     ap.add_argument("--checkpoint", default="final", choices=["best", "final"])
     ap.add_argument("--score_only", action="store_true")
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument("--save_epochs", default="", help="comma list of 1-indexed epochs to snapshot, e.g. 1,2,5,10")
+    ap.add_argument("--score_snapshots", action="store_true", help="also score every saved ep<N>.pt -> scores_ep<N>.json")
+    ap.add_argument("--keep_snapshots", action="store_true", help="keep ep<N>.pt after scoring (default: delete; disk is shared)")
     args = ap.parse_args(argv)
     if args.smoke:
         args.n_train, args.n_val, args.n_test = 400, 64, 64
@@ -75,7 +78,8 @@ def main(argv=None):
         summary = json.loads((out_dir / "train_summary.json").read_text(encoding="utf-8"))
     else:
         model, summary = train_cell(ds, tok, args.objective, args.seed, out_dir, device,
-                                    epochs=args.epochs, batch=args.batch, lr=args.lr, max_steps=args.max_steps)
+                                    epochs=args.epochs, batch=args.batch, lr=args.lr, max_steps=args.max_steps,
+                                    save_epochs=[int(e) for e in args.save_epochs.split(',') if e])
         print(f"[{name}] trained {summary['n_params']/1e6:.2f}M ({summary['n_params_non_embedding']/1e6:.2f}M non-emb), "
               f"{summary['steps']} steps, {summary['supervised_tokens_seen']/1e6:.1f}M supervised tokens, "
               f"{summary['total_train_sec']:.0f}s", flush=True)
@@ -93,6 +97,21 @@ def main(argv=None):
         print(f"[{name}] floor {f['scorer']:6s}: {f['bits_per_nt_mean']:.4f} bits/nt "
               f"{'OK' if f['floor_ok'] else 'VIOLATION'}", flush=True)
     print(f"[{name}] done in {scores['total_sec']:.0f}s -> {out_dir/fname}", flush=True)
+
+    if args.score_snapshots:
+        for e in sorted(int(x) for x in args.save_epochs.split(",") if x):
+            ck = out_dir / f"ep{e}.pt"
+            if not ck.exists():
+                continue
+            model.load_state_dict(torch.load(ck, map_location=device)); model.eval()
+            t2 = time.time()
+            sc = score_run(model, tok, kind, ds, device, pool_size=args.pool, seed=args.seed, floor_n=args.floor_n)
+            sc.update(train_summary=summary, score_sec=time.time() - t2, checkpoint=f"ep{e}", epoch=e)
+            (out_dir / f"scores_ep{e}.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
+            fl = sc["floors"][0]["bits_per_nt_mean"]
+            print(f"[{name}] snapshot ep{e}: floor {fl:.4f}  ({sc['score_sec']:.0f}s)", flush=True)
+            if not args.keep_snapshots:
+                ck.unlink()
 
 
 if __name__ == "__main__":

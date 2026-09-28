@@ -84,8 +84,10 @@ def eval_loss(model, tok, data_tok: np.ndarray, kind, p, device, batch=256, seed
 def train_cell(ds: Dataset, tok: KmerTokenizer, objective: str, seed: int, out_dir: Path,
                device: str = "cuda", epochs: int = 20, batch: int = 64, lr: float = 3e-4,
                warmup: int = 100, log_every: int = 50, dropout: float = 0.0,
-               max_steps: int | None = None):
-    """max_steps: optional hard cap on optimizer steps (fixed-supervised-token budget runs)."""
+               max_steps: int | None = None, save_epochs=None):
+    """max_steps: optional hard cap on optimizer steps (fixed-supervised-token budget runs).
+    save_epochs: iterable of 1-indexed epochs at which to save ep<N>.pt snapshots (training trajectory)."""
+    save_epochs = set(save_epochs or ())
     out_dir.mkdir(parents=True, exist_ok=True)
     kind, p = parse_objective(objective)
     torch.manual_seed(seed)
@@ -147,6 +149,8 @@ def train_cell(ds: Dataset, tok: KmerTokenizer, objective: str, seed: int, out_d
         if v < best:
             best, best_epoch = v, epoch
             torch.save(model.state_dict(), out_dir / "best.pt")
+        if (epoch + 1) in save_epochs:
+            torch.save(model.state_dict(), out_dir / f"ep{epoch + 1}.pt")
         if done:
             break
     log.close()

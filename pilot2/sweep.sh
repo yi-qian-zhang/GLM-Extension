@@ -11,7 +11,7 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate glm
 
 OUT="${1:?out dir}"; OBJS="${2:?objectives}"; SEEDS="${3:?seeds}"; EXTRA="${4:-}"; TOKS="${5:-char}"
-NGPU="${NGPU:-4}"
+GPUS=(${GPUS:-0 1 2 3}); NGPU=${#GPUS[@]}
 mkdir -p "$OUT"
 sed -i 's/\r$//' pilot/*.py pilot/*.sh 2>/dev/null || true
 
@@ -33,7 +33,7 @@ run_queue() {
     echo "[$(date +%H:%M:%S)] GPU$g done  $name (exit $?)  $(tail -1 "$OUT/$name.log" | cut -c1-100)"
   done
 }
-run_queue 0 "${Q0[@]}" & run_queue 1 "${Q1[@]}" & run_queue 2 "${Q2[@]}" & run_queue 3 "${Q3[@]}" &
+for ((q=0; q<NGPU; q++)); do eval "run_queue ${GPUS[$q]} \"\${Q$q[@]}\"" & done
 wait
 echo "[$(date +%H:%M:%S)] all queues finished"
 python -m pilot2.report --root "$OUT" --scores_name scores_final.json > "$OUT/report.log" 2>&1

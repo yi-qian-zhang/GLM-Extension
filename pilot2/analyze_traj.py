@@ -44,6 +44,43 @@ def summarize(r, tier, host):
     return b, r1, ex
 
 
+GRID = (2.03, 2.05, 2.10, 2.20, 2.40, 3.00)
+
+
+def matched_table(rows):
+    """Probe bits/nt interpolated at fixed held-out floors, per (tok, obj), mean over seeds.
+
+    Each seed's curve is taken from its least-overfit snapshot onward (the floor
+    first dips as the model learns, then rises as it overfits), sorted by floor,
+    and linearly interpolated; floors outside a curve's range are left blank.
+    """
+    cur = defaultdict(list)
+    for w in rows:
+        cur[(w["tok"], w["obj"], w["seed"])].append(w)
+    out = defaultdict(lambda: defaultdict(list))
+    for (tok, obj, _), ws in cur.items():
+        ws = sorted(ws, key=lambda w: w["epoch"])
+        ws = ws[int(np.argmin([w["floor"] for w in ws])):]
+        ws = sorted(ws, key=lambda w: w["floor"])
+        fl = np.array([w["floor"] for w in ws])
+        for t in (1, 4, 16):
+            if not all(f"b{t}" in w for w in ws):
+                continue
+            b = np.array([w[f"b{t}"] for w in ws])
+            for x in GRID:
+                if fl[0] <= x <= fl[-1]:
+                    out[(tok, obj, t)][x].append(float(np.interp(x, fl, b)))
+    md = ["", "## Memorization at matched overfitting", "",
+          "probe bits/nt interpolated at each held-out floor (mean over seeds; — = curve never reaches that floor). "
+          "Lower = more memorized; 2.000 = nothing memorized.", "",
+          "| tok | obj | tier | " + " | ".join(f"@{x:.2f}" for x in GRID) + " |",
+          "|---|---|---|" + "---|" * len(GRID)]
+    for (tok, obj, t) in sorted(out, key=lambda k: (k[2], k[1], k[0])):
+        v = out[(tok, obj, t)]
+        md.append(f"| {tok} | {obj} | r={t} | " + " | ".join(f"{np.mean(v[x]):.3f}" if v.get(x) else "—" for x in GRID) + " |")
+    return md
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", nargs="+", default=["outputs/traj1"],
@@ -83,6 +120,7 @@ def main(argv=None):
         md.append(f"| {w['tok']} | {w['obj']} | {w['seed']} | {w['epoch']} | {g('floor')} | {g('b1')} | {g('b4')} | {g('b16')} | "
                   f"{g('r1','{:.2f}')} | {g('r4','{:.2f}')} | {g('r16','{:.2f}')} | {g('x1','{:.2f}')} | {g('x4','{:.2f}')} | "
                   f"{g('x16','{:.2f}')} | {g('fp','{:.2f}')} |")
+    md += matched_table(rows)
     (root / "trajectory.md").write_text("\n".join(md), encoding="utf-8")
     print("\n".join(md))
 
@@ -112,8 +150,8 @@ def main(argv=None):
     for ax in axes[2:]:
         ax.set_xlabel("held-out bits/nt (overfitting)"); ax.set_ylabel("probe bits/nt")
     axes[2].set_title("memorization at matched overfitting")
-    # the comparable band: the least-overfit tokenizer only spans ~2.00-2.05
-    axes[3].set_xlim(1.995, 2.10); axes[3].set_title("same, zoomed to the shared overfitting range")
+    # the band every tokenizer crosses (6mer AR tops out at ~2.5 held-out bits)
+    axes[3].set_xlim(1.995, 2.6); axes[3].set_title("same, zoomed to the shared overfitting range")
     for ax in axes:
         ax.legend(fontsize=6)
     fig.tight_layout(); fig.savefig(root / "trajectory.png", dpi=150)

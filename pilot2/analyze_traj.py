@@ -87,24 +87,29 @@ def main(argv=None):
     by = defaultdict(list)
     for w in rows:
         by[(w["tok"], w["obj"])].append(w)
-    fig, axes = plt.subplots(1, 3, figsize=(16, 4.6))
-    for (tok, obj), ws in sorted(by.items()):
+    fig, axes = plt.subplots(1, 4, figsize=(21, 4.6))
+    palette = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    for i, ((tok, obj), ws) in enumerate(sorted(by.items())):
         agg = defaultdict(list)
         for w in ws:
             agg[w["epoch"]].append(w)
         es = sorted(agg)
         mean = lambda k: [np.mean([w[k] for w in agg[e] if k in w]) for e in es]
-        lab = f"{tok} {obj}"
-        axes[0].plot(es, mean("b16"), marker="o", ms=3, label=f"{lab} r=16")
-        axes[0].plot(es, mean("b1"), ls="--", marker=".", ms=3, label=f"{lab} r=1")
-        axes[1].plot(es, mean("floor"), marker="o", ms=3, label=lab)
-        axes[2].plot(mean("floor"), mean("b16"), marker="o", ms=3, label=f"{lab} r=16")
-        axes[2].plot(mean("floor"), mean("b1"), ls="--", marker=".", ms=3, label=f"{lab} r=1")
+        lab, c = f"{tok} {obj}", palette[i % len(palette)]
+        axes[0].plot(es, mean("b16"), color=c, marker="o", ms=3, label=f"{lab} r=16")
+        axes[0].plot(es, mean("b1"), color=c, ls="--", marker=".", ms=3, label=f"{lab} r=1")
+        axes[1].plot(es, mean("floor"), color=c, marker="o", ms=3, label=lab)
+        for ax in axes[2:]:
+            ax.plot(mean("floor"), mean("b16"), color=c, marker="o", ms=3, label=f"{lab} r=16")
+            ax.plot(mean("floor"), mean("b1"), color=c, ls="--", marker=".", ms=3, label=f"{lab} r=1")
     axes[0].set_xlabel("epoch"); axes[0].set_ylabel("probe bits/nt"); axes[0].set_title("memorization vs epoch")
     axes[1].set_xlabel("epoch"); axes[1].set_ylabel("held-out bits/nt"); axes[1].set_title("overfitting vs epoch")
     axes[1].axhline(2.0, color="gray", lw=0.8, ls=":")
-    axes[2].set_xlabel("held-out bits/nt (overfitting)"); axes[2].set_ylabel("probe bits/nt")
+    for ax in axes[2:]:
+        ax.set_xlabel("held-out bits/nt (overfitting)"); ax.set_ylabel("probe bits/nt")
     axes[2].set_title("memorization at matched overfitting")
+    # the comparable band: the least-overfit tokenizer only spans ~2.00-2.05
+    axes[3].set_xlim(1.995, 2.10); axes[3].set_title("same, zoomed to the shared overfitting range")
     for ax in axes:
         ax.legend(fontsize=6)
     fig.tight_layout(); fig.savefig(root / "trajectory.png", dpi=150)

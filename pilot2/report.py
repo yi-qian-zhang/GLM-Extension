@@ -51,7 +51,7 @@ def extract_stats(run, host):
         if host in p["extract"]:
             out[p["repetitions"]].append(p["extract"][host])
     return {r: {"n": len(v), "exact_rate": float(np.mean([e["exact"] for e in v])),
-                "mean_hamming": float(np.mean([e["hamming"] for e in v]))} for r, v in out.items()}
+                "mean_hamming": float(np.mean([e.get("hamming_nt", e.get("hamming", 0)) for e in v]))} for r, v in out.items()}
 
 
 def fmt_tier(d):
@@ -103,7 +103,7 @@ def main(argv=None):
             md += fmt_tier(tier_stats(r, key)) + [""]
 
     md += ["## Exact-match extraction from a 48-nt prefix (Carlini-2023 definition)", "",
-           "| run | host | tier | n | exact rate | mean hamming (of 48) |", "|---|---|---|---|---|---|"]
+           "| run | host | tier | n | exact rate | mean hamming (nt) |", "|---|---|---|---|---|---|"]
     for name, r in runs.items():
         for host in ("train", "fresh"):
             for tier, s in sorted(extract_stats(r, host).items()):

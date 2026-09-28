@@ -51,6 +51,7 @@ def main(argv=None):
     ap.add_argument("--score_snapshots", action="store_true", help="also score every saved ep<N>.pt -> scores_ep<N>.json")
     ap.add_argument("--d_ff", type=int, default=None, help="capacity control: feed-forward width (default 4*d)")
     ap.add_argument("--emb_rank", type=int, default=None, help="capacity control: factorized tied embedding rank")
+    ap.add_argument("--emb_lr_mult", type=float, default=1.0, help="learning-rate multiplier for the token embedding only")
     ap.add_argument("--keep_snapshots", action="store_true", help="keep ep<N>.pt after scoring (default: delete; disk is shared)")
     args = ap.parse_args(argv)
     if args.smoke:
@@ -82,7 +83,7 @@ def main(argv=None):
     else:
         model, summary = train_cell(ds, tok, args.objective, args.seed, out_dir, device,
                                     epochs=args.epochs, batch=args.batch, lr=args.lr, max_steps=args.max_steps,
-                                    save_epochs=[int(e) for e in args.save_epochs.split(',') if e], model_kw=model_kw)
+                                    save_epochs=[int(e) for e in args.save_epochs.split(',') if e], model_kw=model_kw, emb_lr_mult=args.emb_lr_mult)
         print(f"[{name}] trained {summary['n_params']/1e6:.2f}M ({summary['n_params_non_embedding']/1e6:.2f}M non-emb), "
               f"{summary['steps']} steps, {summary['supervised_tokens_seen']/1e6:.1f}M supervised tokens, "
               f"{summary['total_train_sec']:.0f}s", flush=True)

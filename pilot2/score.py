@@ -92,34 +92,78 @@ def heldout_floor(model, tok, scorer, test_nt: np.ndarray, device, n=500):
             "floor_ok": bool(bits.mean() >= 1.999), "min_window_bits": float(bits.min())}
 
 
+def _cover(tok, nt_start: int, nt_end: int):
+    """Token-aligned nt range [lo, hi) covering [nt_start, nt_end) (identity when aligned)."""
+    return (nt_start // tok.k) * tok.k, -(-nt_end // tok.k) * tok.k
+
+
+def _kmer_letters(tok, device):
+    """(n_content, k) nt ids 1..4 of every content token, for prefix-consistent decoding."""
+    ids = (tok.content_ids - tok.content_ids[0]).numpy()
+    return torch.from_numpy(np.stack([(ids // p) % 4 + 1 for p in tok._pow], 1)).to(device)
+
+
 @torch.no_grad()
-def rank_probe(model, tok, scorer, probe: Probe, host: np.ndarray, pool: np.ndarray, device):
+def rank_probe(model, tok, scorer, probe: Probe, host: np.ndarray, pool: np.ndarray, device,
+               offset: int = PROBE_OFFSET):
+    """Rank the probe against the pool, all placed at `offset` in the same host.
+
+    When `offset` is not a multiple of k the scored span is widened to whole tokens, so it
+    includes up to 2(k-1) host nucleotides shared by every candidate: the ranking is exact,
+    and bits/nt is normalised by the covered nucleotides (= PROBE_LEN when aligned)."""
     n = len(pool)
     win = np.tile(host[None, :], (n + 1, 1))
-    win[0, PROBE_OFFSET:PROBE_OFFSET + PROBE_LEN] = probe.seq
-    win[1:, PROBE_OFFSET:PROBE_OFFSET + PROBE_LEN] = pool
+    win[0, offset:offset + PROBE_LEN] = probe.seq
+    win[1:, offset:offset + PROBE_LEN] = pool
     x = torch.from_numpy(tok.encode(win)).to(device)
-    span = tok.span(PROBE_OFFSET, PROBE_OFFSET + PROBE_LEN)
+    lo, hi = _cover(tok, offset, offset + PROBE_LEN)
+    span = tok.span(lo, hi)
     s = SCORERS[scorer](model, tok, x, span).cpu().numpy()
     true, cands = s[0], s[1:]
     rank = 1 + int((cands > true).sum())
-    return {"rank": rank, "n_pool": n, "p_chance": rank / (n + 1),
-            "probe_bits_per_nt": float(-true / PROBE_LEN),
-            "pool_bits_per_nt_mean": float((-cands / PROBE_LEN).mean()),
-            "pool_bits_per_nt_std": float((-cands / PROBE_LEN).std()),
+    return {"rank": rank, "n_pool": n, "p_chance": rank / (n + 1), "offset": int(offset),
+            "probe_bits_per_nt": float(-true / (hi - lo)),
+            "pool_bits_per_nt_mean": float((-cands / (hi - lo)).mean()),
+            "pool_bits_per_nt_std": float((-cands / (hi - lo)).std()),
             "z": float((true - cands.mean()) / (cands.std() + 1e-9))}
 
 
 @torch.no_grad()
-def extract_prefix(model, tok, kind, probe: Probe, host: np.ndarray, device, k_nt: int = 48):
-    """Reveal host[:96] + probe[:k_nt]; recover probe[k_nt:] token by token, compare in nt."""
+def extract_prefix(model, tok, kind, probe: Probe, host: np.ndarray, device, k_nt: int = 48,
+                   offset: int = PROBE_OFFSET):
+    """Reveal host[:offset] + probe[:k_nt]; recover probe[k_nt:] token by token, compare in nt.
+
+    If the first unknown nucleotide falls inside a token, that token's already-revealed
+    letters are enforced: decoding is restricted to k-mers consistent with the known prefix."""
     content = tok.content_ids.to(device)
-    start_nt, end_nt = PROBE_OFFSET + k_nt, PROBE_OFFSET + PROBE_LEN
-    start, end = tok.nt_to_tok(start_nt), tok.nt_to_tok(end_nt)
+    start_nt, end_nt = offset + k_nt, offset + PROBE_LEN
+    lo, hi = _cover(tok, start_nt, end_nt)
+    start, end = tok.nt_to_tok(lo), tok.nt_to_tok(hi)
     win = host.copy()
-    win[PROBE_OFFSET:PROBE_OFFSET + PROBE_LEN] = probe.seq
+    win[offset:offset + PROBE_LEN] = probe.seq
     xt = torch.from_numpy(tok.encode(win[None]))[0].to(device)
     truth_nt = torch.from_numpy(win[start_nt:end_nt]).to(device)
+    letters = _kmer_letters(tok, device) if lo < start_nt else None
+
+    def allowed(pos):
+        """Content-token mask consistent with revealed nucleotides inside token `pos` (or None)."""
+        if letters is None:
+            return None
+        nt0 = pos if hasattr(tok, "fill_id") else pos * tok.k
+        known = [(i, int(win[nt0 + i])) for i in range(tok.k) if nt0 + i < start_nt]
+        if not known:
+            return None
+        m = torch.ones(len(content), dtype=torch.bool, device=device)
+        for i, v in known:
+            m &= letters[:, i] == v
+        return m
+
+    def pick(logits, pos):
+        lc = logits[content]
+        m = allowed(pos)
+        if m is not None:
+            lc = lc.masked_fill(~m, float("-inf"))
+        return content[lc.argmax()]
     if kind == "ar":
         ctx = with_bos(xt[None, :start], tok.bos_id)
         gen = []
@@ -131,7 +175,7 @@ def extract_prefix(model, tok, kind, probe: Probe, host: np.ndarray, device, k_n
                 continue
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 logits = model(ctx)[0, -1].float()
-            nxt = content[logits[content].argmax()]
+            nxt = pick(logits, pos)
             gen.append(nxt)
             ctx = torch.cat([ctx, nxt.view(1, 1)], dim=1)
         pred_tok = torch.stack(gen)
@@ -142,29 +186,40 @@ def extract_prefix(model, tok, kind, probe: Probe, host: np.ndarray, device, k_n
         for pos in range(start, end):
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 logits = model(xb)[0, pos + 1].float()
-            xb[0, pos + 1] = content[logits[content].argmax()]
+            xb[0, pos + 1] = pick(logits, pos)
         pred_tok = xb[0, start + 1:end + 1]
-    pred_nt = tok.decode_t(pred_tok[None])[0]
+    pred_nt = tok.decode_t(pred_tok[None])[0][start_nt - lo:end_nt - lo]
     ham = int((pred_nt != truth_nt).sum())
-    return {"k_revealed_nt": k_nt, "n_generated_nt": int(end_nt - start_nt), "n_generated_tok": int(end - start),
+    return {"k_revealed_nt": k_nt, "offset": int(offset), "n_generated_nt": int(end_nt - start_nt),
+            "n_generated_tok": int(end - start),
             "exact": bool(ham == 0), "hamming_nt": ham, "chance_exact": float(4.0 ** -(end_nt - start_nt))}
 
 
-def score_run(model, tok: KmerTokenizer, kind: str, ds: Dataset, device, pool_size=500, seed=0, floor_n=500):
+def score_run(model, tok: KmerTokenizer, kind: str, ds: Dataset, device, pool_size=500, seed=0, floor_n=500,
+              offset_mode: str = "fixed"):
+    """offset_mode="random": the training host is scored at that copy's own offset, and the
+    fresh host at a new random offset (`phase_match` = fraction of training copies whose
+    k-mer phase equals the fresh offset's)."""
     rng = np.random.default_rng(10_000 + seed)
     pool = random_dna(rng, pool_size, PROBE_LEN)
     fresh_hosts = {p.probe_id: random_dna(rng, 1, WINDOW)[0] for p in ds.probes}
+    off_rng = np.random.default_rng(20_000 + seed)
+    fresh_off = {p.probe_id: (PROBE_OFFSET if offset_mode == "fixed"
+                              else int(off_rng.integers(0, WINDOW - PROBE_LEN + 1))) for p in ds.probes}
     res = {"kind": kind, "tokenizer": tok.name, "k": tok.k, "pool_size": pool_size, "floors": [], "probes": []}
     for sc in SCORERS_FOR[kind]:
         res["floors"].append(heldout_floor(model, tok, sc, ds.test, device, floor_n))
     for p in ds.probes:
-        entry = {"probe_id": p.probe_id, "repetitions": p.repetitions, "ranks": {}, "extract": {}}
-        hosts = {"fresh": fresh_hosts[p.probe_id]}
+        fo = fresh_off[p.probe_id]
+        entry = {"probe_id": p.probe_id, "repetitions": p.repetitions, "ranks": {}, "extract": {},
+                 "train_offsets": list(p.offsets), "fresh_offset": fo,
+                 "phase_match": (float(np.mean([(fo - o) % tok.k == 0 for o in p.offsets])) if p.offsets else None)}
+        hosts = {"fresh": (fresh_hosts[p.probe_id], fo)}
         if p.repetitions > 0:
-            hosts["train"] = ds.train[p.host_rows[0]]
-        for hname, host in hosts.items():
+            hosts["train"] = (ds.train[p.host_rows[0]], p.offsets[0])
+        for hname, (host, off) in hosts.items():
             for sc in SCORERS_FOR[kind]:
-                entry["ranks"][f"{sc}/{hname}"] = rank_probe(model, tok, sc, p, host, pool, device)
-            entry["extract"][hname] = extract_prefix(model, tok, kind, p, host, device)
+                entry["ranks"][f"{sc}/{hname}"] = rank_probe(model, tok, sc, p, host, pool, device, offset=off)
+            entry["extract"][hname] = extract_prefix(model, tok, kind, p, host, device, offset=off)
         res["probes"].append(entry)
     return res

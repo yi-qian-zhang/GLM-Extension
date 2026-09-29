@@ -50,6 +50,7 @@ class Probe:
     repetitions: int          # 0 = non-member control (never inserted)
     seq: np.ndarray           # PROBE_LEN ids
     host_rows: list           # indices into train set carrying this probe
+    offsets: list = dataclasses.field(default_factory=list)  # nt offset of the probe in each host row
 
 
 @dataclasses.dataclass
@@ -78,7 +79,7 @@ class Dataset:
             "probe_offset": PROBE_OFFSET,
             "probes": [
                 {"probe_id": p.probe_id, "repetitions": p.repetitions,
-                 "seq": decode(p.seq), "host_rows": p.host_rows}
+                 "seq": decode(p.seq), "host_rows": p.host_rows, "offsets": p.offsets}
                 for p in self.probes
             ],
         }
@@ -93,8 +94,15 @@ def build_dataset(
     tiers=(1, 16),
     n_nonmember: int = 40,
     data_seed: int = 1234,
+    offset_mode: str = "fixed",
 ) -> Dataset:
+    """offset_mode: "fixed" puts every probe copy at PROBE_OFFSET (token-aligned for k | 96);
+    "random" draws each copy's offset uniformly from 0..WINDOW-PROBE_LEN, so copies of the
+    same probe are tokenized with different k-mer phases (real duplicates occur anywhere).
+    Offsets come from a separate stream, so hosts and probes are identical in both modes."""
+    assert offset_mode in ("fixed", "random"), offset_mode
     rng = np.random.default_rng(data_seed)
+    off_rng = np.random.default_rng(data_seed + 7_777)
     train = random_dna(rng, n_train, WINDOW)
     val = random_dna(rng, n_val, WINDOW)
     test = random_dna(rng, n_test, WINDOW)
@@ -103,14 +111,17 @@ def build_dataset(
     pid = 0
     extra_rows = []  # host windows that carry probes
     extra_pid = []
+    extra_off = []
     for r in tiers:
         for _ in range(probes_per_tier):
             seq = random_dna(rng, 1, PROBE_LEN)[0]
             for _ in range(r):
                 host = random_dna(rng, 1, WINDOW)[0]
-                host[PROBE_OFFSET:PROBE_OFFSET + PROBE_LEN] = seq
+                off = PROBE_OFFSET if offset_mode == "fixed" else int(off_rng.integers(0, WINDOW - PROBE_LEN + 1))
+                host[off:off + PROBE_LEN] = seq
                 extra_rows.append(host)
                 extra_pid.append(pid)
+                extra_off.append(off)
             probes.append(Probe(pid, r, seq, []))
             pid += 1
     for _ in range(n_nonmember):
@@ -123,13 +134,15 @@ def build_dataset(
     all_train = np.concatenate([train, np.stack(extra_rows)], axis=0)
     tag = np.concatenate([np.full(n_train, -1, dtype=np.int64),
                           np.array(extra_pid, dtype=np.int64)])
+    offs = np.concatenate([np.full(n_train, -1, dtype=np.int64), np.array(extra_off, dtype=np.int64)])
     perm = rng.permutation(all_train.shape[0])
-    all_train, tag = all_train[perm], tag[perm]
+    all_train, tag, offs = all_train[perm], tag[perm], offs[perm]
     for p in probes:
         p.host_rows = np.nonzero(tag == p.probe_id)[0].tolist()
+        p.offsets = [int(offs[row]) for row in p.host_rows]
         assert len(p.host_rows) == p.repetitions, (p.probe_id, len(p.host_rows), p.repetitions)
-        for row in p.host_rows:  # golden test: flag precision and recall are exactly 1.0
-            assert np.array_equal(all_train[row, PROBE_OFFSET:PROBE_OFFSET + PROBE_LEN], p.seq)
+        for row, off in zip(p.host_rows, p.offsets):  # golden test: flag precision and recall are exactly 1.0
+            assert np.array_equal(all_train[row, off:off + PROBE_LEN], p.seq)
     return Dataset(all_train, val, test, probes, tag, data_seed)
 
 

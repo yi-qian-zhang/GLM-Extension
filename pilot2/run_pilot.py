@@ -52,6 +52,8 @@ def main(argv=None):
     ap.add_argument("--d_ff", type=int, default=None, help="capacity control: feed-forward width (default 4*d)")
     ap.add_argument("--emb_rank", type=int, default=None, help="capacity control: factorized tied embedding rank")
     ap.add_argument("--emb_lr_mult", type=float, default=1.0, help="learning-rate multiplier for the token embedding only")
+    ap.add_argument("--probe_offset", default="fixed", choices=["fixed", "random"],
+                    help="fixed: every probe copy at nt 96 (token-aligned); random: each copy at a random offset")
     ap.add_argument("--keep_snapshots", action="store_true", help="keep ep<N>.pt after scoring (default: delete; disk is shared)")
     args = ap.parse_args(argv)
     if args.smoke:
@@ -72,7 +74,8 @@ def main(argv=None):
 
     t0 = time.time()
     ds = build_dataset(args.n_train, args.n_val, args.n_test, args.probes_per_tier,
-                       tuple(int(t) for t in args.tiers.split(",")), args.n_nonmember, args.data_seed)
+                       tuple(int(t) for t in args.tiers.split(",")), args.n_nonmember, args.data_seed,
+                       offset_mode=args.probe_offset)
     ds.save_meta(out_dir / "data_meta.json")
     print(f"[{name}] tokenizer {tok.name}: k={tok.k}, vocab={tok.vocab_size}, {tok.n_tokens} tok/window; "
           f"train={ds.train.shape} probes={len(ds.probes)}", flush=True)
@@ -93,7 +96,8 @@ def main(argv=None):
     model.eval()
 
     t1 = time.time()
-    scores = score_run(model, tok, kind, ds, device, pool_size=args.pool, seed=args.seed, floor_n=args.floor_n)
+    scores = score_run(model, tok, kind, ds, device, pool_size=args.pool, seed=args.seed, floor_n=args.floor_n,
+                         offset_mode=args.probe_offset)
     scores.update(train_summary=summary, score_sec=time.time() - t1, total_sec=time.time() - t0,
                   checkpoint=args.checkpoint)
     fname = "scores.json" if args.checkpoint == "best" else "scores_final.json"
@@ -110,7 +114,8 @@ def main(argv=None):
                 continue
             model.load_state_dict(torch.load(ck, map_location=device)); model.eval()
             t2 = time.time()
-            sc = score_run(model, tok, kind, ds, device, pool_size=args.pool, seed=args.seed, floor_n=args.floor_n)
+            sc = score_run(model, tok, kind, ds, device, pool_size=args.pool, seed=args.seed, floor_n=args.floor_n,
+                         offset_mode=args.probe_offset)
             sc.update(train_summary=summary, score_sec=time.time() - t2, checkpoint=f"ep{e}", epoch=e)
             (out_dir / f"scores_ep{e}.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
             fl = sc["floors"][0]["bits_per_nt_mean"]

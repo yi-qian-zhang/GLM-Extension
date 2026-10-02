@@ -54,6 +54,8 @@ def main(argv=None):
     ap.add_argument("--emb_lr_mult", type=float, default=1.0, help="learning-rate multiplier for the token embedding only")
     ap.add_argument("--probe_offset", default="fixed", choices=["fixed", "random"],
                     help="fixed: every probe copy at nt 96 (token-aligned); random: each copy at a random offset")
+    ap.add_argument("--pos_enc", default="abs", choices=["abs", "rope"],
+                    help="abs: learned absolute position embedding; rope: rotary (relative) positions")
     ap.add_argument("--keep_snapshots", action="store_true", help="keep ep<N>.pt after scoring (default: delete; disk is shared)")
     args = ap.parse_args(argv)
     if args.smoke:
@@ -81,6 +83,8 @@ def main(argv=None):
           f"train={ds.train.shape} probes={len(ds.probes)}", flush=True)
 
     model_kw = {k: v for k, v in (("d_ff", args.d_ff), ("emb_rank", args.emb_rank)) if v}
+    if args.pos_enc != "abs":
+        model_kw["pos_enc"] = args.pos_enc
     if args.score_only:
         model = Backbone(tok.vocab_size, tok.n_tokens + 1, causal=(kind == "ar"), **model_kw).to(device)
         summary = json.loads((out_dir / "train_summary.json").read_text(encoding="utf-8"))

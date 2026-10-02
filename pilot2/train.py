@@ -87,7 +87,7 @@ def train_cell(ds: Dataset, tok: KmerTokenizer, objective: str, seed: int, out_d
                max_steps: int | None = None, save_epochs=None, model_kw=None, emb_lr_mult: float = 1.0):
     """max_steps: optional hard cap on optimizer steps (fixed-supervised-token budget runs).
     save_epochs: iterable of 1-indexed epochs at which to save ep<N>.pt snapshots (training trajectory).
-    model_kw: extra Backbone kwargs (d_ff, emb_rank) for capacity-matched controls.
+    model_kw: extra Backbone kwargs (d_ff, emb_rank, pos_enc) for capacity / position-encoding controls.
     emb_lr_mult: learning-rate multiplier for the token embedding table only (tied, so also the output head)."""
     model_kw = {k: v for k, v in (model_kw or {}).items() if v}
     save_epochs = set(save_epochs or ())

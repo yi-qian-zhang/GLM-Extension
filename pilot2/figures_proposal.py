@@ -158,6 +158,35 @@ def main(argv=None):
     style(ax, "Canary seen 16x: memorised over fine-tuning, lr 2e-5, random placement", "epoch", "canary memorised (%)")
     ax.legend(frameon=False, fontsize=8.5)
     fig.tight_layout(); fig.savefig(out / "F5_real_models.png", dpi=200); plt.close(fig)
+    # ---------------- F6 memorisation vs utility on E. coli (real models)
+    fig, ax = plt.subplots(figsize=(6.6, 3.8))
+    ec = dnabert_rows(O / "dnabert_ecoli" / "dnabert_report.md", "causal_ecoli") if (O / "dnabert_ecoli" / "dnabert_report.md").exists() else {}
+    for k in (3, 4, 5, 6):
+        pts = sorted((e, v) for (kk, e), v in ec.items() if kk == k and e > 0)
+        if pts:
+            ax.plot([v[0] for _, v in pts], [mem(v[1][2][0]) for _, v in pts], "s-", color=KC[k], lw=2, ms=4, label=f"DNABERT {k}-mer")
+            for e, v in pts:
+                ax.annotate(str(e), (v[0], mem(v[1][2][0])), textcoords="offset points", xytext=(4, 3), fontsize=7, color=KC[k])
+    hroot = O / "hyena_ecoli"
+    for sd, name in ((0, "hyena_medium-160k_ecoli_s0"),):
+        pts = []
+        for f in sorted(hroot.glob(f"{name}/scores_ep*.json")) + [hroot / name / "scores_final.json"]:
+            if not f.exists():
+                continue
+            r = json.loads(f.read_text(encoding="utf-8"))
+            if r["epoch"] == 0:
+                continue
+            ps = [p for p in r["probes"] if p["repetitions"] == 16]
+            pts.append((r["epoch"], r["floors"][0]["bits_per_nt_mean"], np.mean([p["ranks"]["causal/train"]["probe_bits_per_nt"] for p in ps])))
+        pts.sort()
+        if pts:
+            ax.plot([u for _, u, _ in pts], [mem(b) for _, _, b in pts], "o-", color=C["char"], lw=2.2, ms=5, label="HyenaDNA medium (1-mer)")
+            for e, u, b in pts:
+                ax.annotate(str(e), (u, mem(b)), textcoords="offset points", xytext=(4, 3), fontsize=7, color=C["char"])
+    style(ax, "Fine-tuning on E. coli with canaries: memorisation vs utility (labels = epoch)",
+          "held-out loss on unseen E. coli, bits/nt  (lower = more useful)", "16x canary memorised (%)")
+    ax.legend(frameon=False, fontsize=8.5)
+    fig.tight_layout(); fig.savefig(out / "F6_utility.png", dpi=200); plt.close(fig)
     print("->", sorted(p.name for p in out.glob("F*.png")))
     return 0
 

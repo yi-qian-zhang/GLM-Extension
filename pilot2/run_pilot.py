@@ -18,6 +18,7 @@ from pathlib import Path
 import torch
 
 from .data import WINDOW, build_dataset
+from .real_data import build_real_dataset
 from .model import Backbone
 from .score import score_run
 from .tokenizers import get_tokenizer
@@ -38,6 +39,8 @@ def main(argv=None):
     ap.add_argument("--tiers", default="1,4,16")
     ap.add_argument("--n_nonmember", type=int, default=40)
     ap.add_argument("--data_seed", type=int, default=1234)
+    ap.add_argument("--data", default="synthetic", choices=["synthetic", "ecoli"], help="synthetic iid DNA, or real E. coli windows")
+    ap.add_argument("--fasta", default="data/genomes/ecoli_K12_MG1655.fna")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--max_steps", type=int, default=None, help="cap optimizer steps (fixed-supervised-token budget)")
     ap.add_argument("--batch", type=int, default=64)
@@ -75,9 +78,13 @@ def main(argv=None):
     (out_dir / "args.json").write_text(json.dumps(vars(args), indent=1), encoding="utf-8")
 
     t0 = time.time()
-    ds = build_dataset(args.n_train, args.n_val, args.n_test, args.probes_per_tier,
-                       tuple(int(t) for t in args.tiers.split(",")), args.n_nonmember, args.data_seed,
-                       offset_mode=args.probe_offset)
+    tiers = tuple(int(t) for t in args.tiers.split(","))
+    if args.data == "ecoli":
+        ds = build_real_dataset(args.fasta, args.n_train, args.n_val, args.n_test, args.probes_per_tier, tiers,
+                                args.n_nonmember, args.data_seed, offset_mode=args.probe_offset)
+    else:
+        ds = build_dataset(args.n_train, args.n_val, args.n_test, args.probes_per_tier, tiers, args.n_nonmember,
+                           args.data_seed, offset_mode=args.probe_offset)
     ds.save_meta(out_dir / "data_meta.json")
     print(f"[{name}] tokenizer {tok.name}: k={tok.k}, vocab={tok.vocab_size}, {tok.n_tokens} tok/window; "
           f"train={ds.train.shape} probes={len(ds.probes)}", flush=True)

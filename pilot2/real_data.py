@@ -56,8 +56,11 @@ def zero_order_entropy_bits(x: np.ndarray) -> float:
 
 def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500, n_test: int = 500,
                        probes_per_tier: int = 30, tiers=(1, 4, 8, 16), n_nonmember: int = 40,
-                       data_seed: int = 1234) -> Dataset:
+                       data_seed: int = 1234, offset_mode: str = "fixed") -> Dataset:
+    """offset_mode as in pilot2.data.build_dataset: 'fixed' = every copy at PROBE_OFFSET, 'random' = per-copy offset."""
+    assert offset_mode in ("fixed", "random"), offset_mode
     rng = np.random.default_rng(data_seed)
+    off_rng = np.random.default_rng(data_seed + 7_777)
     all_w = windows_from_genome(read_fasta(fasta))
     assert len(all_w) >= n_train + n_val + n_test, (len(all_w), n_train, n_val, n_test)
     perm = rng.permutation(len(all_w))
@@ -69,27 +72,30 @@ def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500
     # drawn from the unused remainder of the genome, so hosts are in-distribution
     remainder = all_w[perm[n_train + n_val + n_test:]]
     ridx = 0
-    probes, extra_rows, extra_pid, pid = [], [], [], 0
+    probes, extra_rows, extra_pid, extra_off, pid = [], [], [], [], 0
     for r in tiers:
         for _ in range(probes_per_tier):
             seq = random_dna(rng, 1, PROBE_LEN)[0]
             for _ in range(r):
                 host = remainder[ridx % len(remainder)].copy(); ridx += 1
-                host[PROBE_OFFSET:PROBE_OFFSET + PROBE_LEN] = seq
-                extra_rows.append(host); extra_pid.append(pid)
+                off = PROBE_OFFSET if offset_mode == "fixed" else int(off_rng.integers(0, WINDOW - PROBE_LEN + 1))
+                host[off:off + PROBE_LEN] = seq
+                extra_rows.append(host); extra_pid.append(pid); extra_off.append(off)
             probes.append(Probe(pid, r, seq, [])); pid += 1
     for _ in range(n_nonmember):
         probes.append(Probe(pid, 0, random_dna(rng, 1, PROBE_LEN)[0], [])); pid += 1
 
     all_train = np.concatenate([train, np.stack(extra_rows)], axis=0)
     tag = np.concatenate([np.full(n_train, -1, dtype=np.int64), np.array(extra_pid, dtype=np.int64)])
+    offs = np.concatenate([np.full(n_train, -1, dtype=np.int64), np.array(extra_off, dtype=np.int64)])
     perm2 = rng.permutation(all_train.shape[0])
-    all_train, tag = all_train[perm2], tag[perm2]
+    all_train, tag, offs = all_train[perm2], tag[perm2], offs[perm2]
     for p in probes:
         p.host_rows = np.nonzero(tag == p.probe_id)[0].tolist()
+        p.offsets = [int(offs[row]) for row in p.host_rows]
         assert len(p.host_rows) == p.repetitions
-        for row in p.host_rows:
-            assert np.array_equal(all_train[row, PROBE_OFFSET:PROBE_OFFSET + PROBE_LEN], p.seq)
+        for row, off in zip(p.host_rows, p.offsets):
+            assert np.array_equal(all_train[row, off:off + PROBE_LEN], p.seq)
     ds = Dataset(all_train, val, test, probes, tag, data_seed)
     ds.source = str(fasta)
     ds.h0_bits_train = zero_order_entropy_bits(train)

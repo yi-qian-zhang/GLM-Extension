@@ -162,7 +162,7 @@ def main(argv=None):
     fig, ax = plt.subplots(figsize=(6.6, 3.8))
     ec = dnabert_rows(O / "dnabert_ecoli" / "dnabert_report.md", "causal_ecoli") if (O / "dnabert_ecoli" / "dnabert_report.md").exists() else {}
     for k in (3, 4, 5, 6):
-        pts = sorted((e, v) for (kk, e), v in ec.items() if kk == k and e > 0)
+        pts = sorted((e, v) for (kk, e), v in ec.items() if kk == k and e >= 8)
         if pts:
             ax.plot([v[0] for _, v in pts], [mem(v[1][2][0]) for _, v in pts], "s-", color=KC[k], lw=2, ms=4, label=f"DNABERT {k}-mer")
             for e, v in pts:
@@ -174,7 +174,7 @@ def main(argv=None):
             if not f.exists():
                 continue
             r = json.loads(f.read_text(encoding="utf-8"))
-            if r["epoch"] == 0:
+            if r["epoch"] < 8:
                 continue
             ps = [p for p in r["probes"] if p["repetitions"] == 16]
             pts.append((r["epoch"], r["floors"][0]["bits_per_nt_mean"], np.mean([p["ranks"]["causal/train"]["probe_bits_per_nt"] for p in ps])))
@@ -185,7 +185,8 @@ def main(argv=None):
                 ax.annotate(str(e), (u, mem(b)), textcoords="offset points", xytext=(4, 3), fontsize=7, color=C["char"])
     style(ax, "Fine-tuning on E. coli with canaries: memorisation vs utility (labels = epoch)",
           "held-out loss on unseen E. coli, bits/nt  (lower = more useful)", "16x canary memorised (%)")
-    ax.legend(frameon=False, fontsize=8.5)
+    ax.set_xlim(1.85, 2.3); ax.legend(frameon=False, fontsize=8.5, loc="lower right")
+    ax.text(2.29, 96, "HyenaDNA epoch 50: utility 2.88 (off scale)", ha="right", fontsize=7.5, color=C["char"])
     fig.tight_layout(); fig.savefig(out / "F6_utility.png", dpi=200); plt.close(fig)
     print("->", sorted(p.name for p in out.glob("F*.png")))
     return 0

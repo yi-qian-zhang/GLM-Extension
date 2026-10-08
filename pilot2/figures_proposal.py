@@ -94,8 +94,7 @@ def main(argv=None):
         ax.text(x[i] - w / 2, fixed[i] + 1, f"{fixed[i]:.0f}%", ha="center", fontsize=9)
         ax.text(x[i] + w / 2, rnd[i] + 1, f"{rnd[i]:.0f}%", ha="center", fontsize=9)
     ax.set_xticks(x, labels); ax.set_ylim(0, 70); ax.legend(frameon=False, fontsize=9)
-    style(ax, "Share of variance in canary memorisation
-(fixed backbone: 3 tokenizers x 3 objectives x 2 seeds)", "", "share of variance (%)")
+    style(ax, "Share of variance in canary memorisation (fixed backbone)", "", "share of variance (%)")
     fig.tight_layout(); fig.savefig(out / "F1_variance.png", dpi=200); plt.close(fig)
 
     # ---------------- F2 matched-floor curves, synthetic + E. coli

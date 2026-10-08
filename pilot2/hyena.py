@@ -25,6 +25,7 @@ import torch
 import torch.nn.functional as F
 
 from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, Probe, build_dataset, random_dna
+from .real_data import build_real_dataset
 
 MODEL_ROOT = "/data/wh/yqdata/models/HyenaDNA"
 NT_IDS = torch.tensor([7, 8, 9, 10])   # HyenaDNA vocab: A C G T  (pilot2 nt ids 1..4 -> +6)
@@ -193,6 +194,9 @@ def main(argv=None):
     ap.add_argument("--n_nonmember", type=int, default=40)
     ap.add_argument("--data_seed", type=int, default=1234)
     ap.add_argument("--probe_offset", default="random", choices=["fixed", "random"])
+    ap.add_argument("--data", default="synthetic", choices=["synthetic", "ecoli"],
+                    help="synthetic iid DNA, or real E. coli windows (held-out E. coli loss then doubles as the utility metric)")
+    ap.add_argument("--fasta", default="data/genomes/ecoli_K12_MG1655.fna")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--batch", type=int, default=8)
@@ -211,11 +215,18 @@ def main(argv=None):
     torch.cuda.set_device(args.gpu)
     short = args.model.replace("hyenadna-", "").replace("-seqlen-hf", "")
     tag = f"_lr{args.lr:g}" if args.lr != 2e-5 else ""
+    if args.data == "ecoli":
+        tag += "_ecoli"
     out_dir = Path(args.out) / f"hyena_{short}{tag}_s{args.seed}"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "args.json").write_text(json.dumps(vars(args), indent=1), encoding="utf-8")
-    ds = build_dataset(args.n_train, 200, 200, args.probes_per_tier, tuple(int(t) for t in args.tiers.split(",")),
-                       args.n_nonmember, args.data_seed, offset_mode=args.probe_offset)
+    tiers = tuple(int(t) for t in args.tiers.split(","))
+    if args.data == "ecoli":
+        ds = build_real_dataset(args.fasta, args.n_train, 200, 200, args.probes_per_tier, tiers, args.n_nonmember,
+                                args.data_seed, offset_mode=args.probe_offset)
+    else:
+        ds = build_dataset(args.n_train, 200, 200, args.probes_per_tier, tiers, args.n_nonmember, args.data_seed,
+                           offset_mode=args.probe_offset)
     ds.save_meta(out_dir / "data_meta.json")
     model = load_model(args.model, device)
     print(f"[hyena] {args.model}: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M params", flush=True)

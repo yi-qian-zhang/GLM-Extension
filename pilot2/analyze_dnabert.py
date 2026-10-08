@@ -17,12 +17,12 @@ from pathlib import Path
 
 import numpy as np
 
-RUN = re.compile(r"dnabert(?P<k>\d)_s(?P<seed>\d+)")
+RUN = re.compile(r"dnabert(?P<k>\d)(?P<var>_[A-Za-z0-9._-]+?)?_s(?P<seed>\d+)")
 GRID = (2.03, 2.05, 2.10, 2.20, 2.40)
 
 
 def tier_stats(r, tier, host):
-    key = f"span_pll/{host}"
+    key = f"{'causal' if r.get('objective') == 'causal' else 'span_pll'}/{host}"
     ps = [p for p in r["probes"] if p["repetitions"] == tier and key in p["ranks"]]
     if not ps:
         return None
@@ -46,7 +46,8 @@ def main(argv=None):
             if not f.exists():
                 continue
             r = json.loads(f.read_text(encoding="utf-8"))
-            row = {"k": int(m["k"]), "seed": int(m["seed"]), "epoch": int(r["epoch"]), "floor": r["floors"][0]["bits_per_nt_mean"]}
+            row = {"k": int(m["k"]), "var": (m["var"] or "_mlm").lstrip("_"), "seed": int(m["seed"]), "epoch": int(r["epoch"]),
+                   "floor": r["floors"][0]["bits_per_nt_mean"]}
             for t in (0, 1, 4, 16):
                 for host in ("train", "fresh"):
                     s = tier_stats(r, t, host)
@@ -55,32 +56,31 @@ def main(argv=None):
             rows.append(row)
     if not rows:
         print("no runs under", root); return 1
-    rows.sort(key=lambda w: (w["k"], w["epoch"], w["seed"]))
+    rows.sort(key=lambda w: (w["var"], w["k"], w["epoch"], w["seed"]))
     md = [f"# DNABERT k-mer family — {root}", "",
           "Fine-tuned with planted canaries at random offsets; native MLM head; span-masked per-nt scoring. "
           "Cells: probe bits/nt / rank-1 / exact extraction (mean over seeds; n per seed in the header). "
           "fp = non-member rank-1 on a fresh host.", "",
-          "| k | epoch | floor | r=1 train | r=4 train | r=16 train | r=16 fresh | fp |", "|---|---|---|---|---|---|---|---|"]
+          "| variant | k | epoch | floor | r=1 train | r=4 train | r=16 train | r=16 fresh | fp |", "|---|---|---|---|---|---|---|---|---|"]
     by = defaultdict(list)
     for w in rows:
-        by[(w["k"], w["epoch"])].append(w)
+        by[(w["var"], w["k"], w["epoch"])].append(w)
     fmt = lambda s: f"{s[0]:.2f} / {s[1]:.2f} / {s[2]:.2f}" if s else "—"
     agg = {}
-    for (k, e), ws in sorted(by.items()):
+    for (var, k, e), ws in sorted(by.items()):
         def mean_stat(key):
             v = [w[key] for w in ws if key in w]
             return (np.mean([x[0] for x in v]), np.mean([x[1] for x in v]), np.mean([x[2] for x in v])) if v else None
         fl = np.mean([w["floor"] for w in ws])
         cells = [mean_stat((1, "train")), mean_stat((4, "train")), mean_stat((16, "train")), mean_stat((16, "fresh"))]
         fp = mean_stat((0, "fresh"))
-        agg[(k, e)] = (fl, cells)
-        md.append(f"| {k} | {e} | {fl:.3f} | " + " | ".join(fmt(c) for c in cells) + f" | {fp[1]:.2f} |" if fp else
-                  f"| {k} | {e} | {fl:.3f} | " + " | ".join(fmt(c) for c in cells) + " | — |")
+        agg[(var, k, e)] = (fl, cells)
+        md.append(f"| {var} | {k} | {e} | {fl:.3f} | " + " | ".join(fmt(c) for c in cells) + (f" | {fp[1]:.2f} |" if fp else " | — |"))
     # matched-floor interpolation per k (seed-mean curves, from the least-overfit epoch onward)
     md += ["", "## Memorisation at matched held-out floor (r=1 and r=16, training host; lower = more memorised)", "",
-           "| k | tier | " + " | ".join(f"@{x:.2f}" for x in GRID) + " |", "|---|---|" + "---|" * len(GRID)]
-    for k in sorted({w["k"] for w in rows}):
-        pts = sorted((e, agg[(kk, e)]) for (kk, e) in agg if kk == k)
+           "| variant | k | tier | " + " | ".join(f"@{x:.2f}" for x in GRID) + " |", "|---|---|---|" + "---|" * len(GRID)]
+    for var, k in sorted({(w["var"], w["k"]) for w in rows}):
+        pts = sorted((e, agg[(vv, kk, e)]) for (vv, kk, e) in agg if vv == var and kk == k)
         fl = np.array([v[0] for _, v in pts])
         start = int(np.argmin(fl))
         for t, idx in ((1, 0), (16, 2)):
@@ -88,7 +88,7 @@ def main(argv=None):
             f2, b2 = fl[start:], b[start:]
             order = np.argsort(f2); f2, b2 = f2[order], b2[order]
             cells = [f"{np.interp(x, f2, b2):.3f}" if f2[0] <= x <= f2[-1] else "—" for x in GRID]
-            md.append(f"| {k} | r={t} | " + " | ".join(cells) + " |")
+            md.append(f"| {var} | {k} | r={t} | " + " | ".join(cells) + " |")
     out = root / "dnabert_report.md"
     out.write_text("\n".join(md), encoding="utf-8")
     print("\n".join(md)); print(f"-> {out}")

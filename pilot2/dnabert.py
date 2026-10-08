@@ -16,6 +16,18 @@ j-k+1 .. j. Hiding one nucleotide therefore means masking a span of k tokens
 STARTS at j and keeping only the k-mers whose remaining k-1 letters agree with the
 still-visible neighbours.
 
+Two objectives:
+  mlm     native masked-LM head, DNABERT-style span masking. --mask_rate is the TOKEN
+          rate (15% as in pretraining); --mask_nt_rate instead fixes the rate of HIDDEN
+          NUCLEOTIDES (token rate = k x nt rate), which makes the pressure comparable
+          across k: at a 15% token rate a 6-mer model hides only ~2.5% of nucleotides.
+  causal  next-token prediction with a causal attention mask on the encoder (the
+          published pipeline's objective, but without the bidirectional leak and
+          without a new head). With overlapping k-mers the next token adds exactly
+          one nucleotide, so this is nucleotide-level AR over k-mer embeddings and
+          per-nt scoring is exact: p(nt_j | prefix) = p(token_{j-k+1} | prefix)
+          restricted to the four k-mers consistent with the k-1 known letters.
+
 Fine-tuning hyper-parameters follow the published configs: AdamW, lr 2e-5,
 weight decay 0.01, 10% linear warm-up then constant, effective batch 16, grad clip 1.0.
 """
@@ -132,22 +144,25 @@ def nt_logprobs(model, voc: KmerVocab, nt: torch.Tensor, positions, device, rows
     return out
 
 
-def heldout_floor(model, voc, test_nt: np.ndarray, device, n=200, stride=7):
+def heldout_floor(model, voc, test_nt: np.ndarray, device, n=200, stride=7, objective="mlm"):
     x = torch.from_numpy(test_nt[:n])
     pos = list(range(voc.k, WINDOW - voc.k, stride))
-    bits = (-nt_logprobs(model, voc, x, pos, device)).mean(1).cpu().numpy()
-    return {"scorer": "span_pll", "n_windows": int(len(bits)), "positions": len(pos),
+    f = nt_logprobs_causal if objective == "causal" else nt_logprobs
+    bits = (-f(model, voc, x, pos, device)).mean(1).cpu().numpy()
+    return {"scorer": "causal" if objective == "causal" else "span_pll", "n_windows": int(len(bits)), "positions": len(pos),
             "bits_per_nt_mean": float(bits.mean()), "bits_per_nt_std": float(bits.std()),
             "floor_ok": bool(bits.mean() >= 1.95)}
 
 
-def rank_probe(model, voc, probe: Probe, host: np.ndarray, pool: np.ndarray, device, offset: int, stride: int):
+def rank_probe(model, voc, probe: Probe, host: np.ndarray, pool: np.ndarray, device, offset: int, stride: int,
+               objective="mlm"):
     n = len(pool)
     win = np.tile(host[None, :], (n + 1, 1))
     win[0, offset:offset + PROBE_LEN] = probe.seq
     win[1:, offset:offset + PROBE_LEN] = pool
-    pos = list(range(offset, offset + PROBE_LEN, stride))
-    s = nt_logprobs(model, voc, torch.from_numpy(win), pos, device).sum(1).cpu().numpy()
+    pos = [j for j in range(offset, offset + PROBE_LEN, stride) if objective != "causal" or j >= voc.k - 1]
+    f = nt_logprobs_causal if objective == "causal" else nt_logprobs
+    s = f(model, voc, torch.from_numpy(win), pos, device).sum(1).cpu().numpy()
     true, cands = s[0], s[1:]
     rank = 1 + int((cands > true).sum())
     return {"rank": rank, "n_pool": n, "p_chance": rank / (n + 1), "offset": int(offset), "positions": len(pos),
@@ -194,7 +209,79 @@ def extract_prefix(model, voc, probe: Probe, host: np.ndarray, device, offset: i
             "exact": bool(ham == 0), "hamming_nt": ham}
 
 
-def score_run(model, voc, ds, device, pool_size, seed, stride, probes_per_tier=None, floor_n=200):
+
+def causal_attention_mask(B: int, L: int, device) -> torch.Tensor:
+    """(B, L, L) 1/0 mask: position i may attend to j <= i. HF BERT accepts a 3-D attention_mask."""
+    return torch.tril(torch.ones(L, L, device=device)).expand(B, L, L).contiguous()
+
+
+@torch.no_grad()
+def nt_logprobs_causal(model, voc: KmerVocab, nt: torch.Tensor, positions, device, batch=64):
+    """Causal model: log2 p(nt_j | nt_<j) read from the token that introduces nt j (token j-k+1).
+
+    Positions j < k-1 are not scorable (they sit inside the first token) and are skipped."""
+    k = voc.k
+    ids = voc.encode(nt).to(device)
+    B, L = ids.shape
+    letters = voc.letters.to(device)
+    kmer_ids = voc.kmer_ids.to(device)
+    pos = [j for j in positions if j >= k - 1]
+    tok = torch.tensor([j - k + 1 for j in pos], device=device)        # token index whose last letter is j
+    out = torch.empty(B, len(pos), device=device)
+    ntd = nt.to(device)
+    for b0 in range(0, B, batch):
+        xb = ids[b0:b0 + batch]
+        w = xb.shape[0]
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            logits = model(input_ids=xb, attention_mask=causal_attention_mask(w, L, device)).logits.float()
+        # logits at ids-index t predict ids-index t+1; token tok sits at ids-index tok+1, so read index tok
+        at = logits[torch.arange(w)[:, None], tok[None, :]]                  # (w, P, V)
+        lk = at[..., kmer_ids]                                                # (w, P, 4^k)
+        for pi, j in enumerate(pos):
+            t0 = j - k + 1
+            cons = torch.ones(w, 4 ** k, dtype=torch.bool, device=device)
+            for i in range(k - 1):
+                cons &= letters[:, i][None, :] == ntd[b0:b0 + w, t0 + i, None]
+            lp = lk[:, pi].masked_fill(~cons, float("-inf"))
+            lp = lp - torch.logsumexp(lp, dim=1, keepdim=True)              # normalise over the 4 consistent k-mers
+            true_tok = ((ntd[b0:b0 + w, t0:t0 + k] - 1) * voc.pw.to(device)).sum(1)
+            # index of the true k-mer in kmer order
+            idx = torch.searchsorted(voc.kmer_ids.to(device), voc.table.to(device)[true_tok])
+            out[b0:b0 + w, pi] = lp[torch.arange(w), idx] / math.log(2.0)
+    return out
+
+
+@torch.no_grad()
+def extract_prefix_causal(model, voc: KmerVocab, probe: Probe, host: np.ndarray, device, offset: int, k_nt: int = 48):
+    """Greedy nucleotide-by-nucleotide continuation from host[:offset+k_nt] (nothing to the right is used)."""
+    k = voc.k
+    start, end = offset + k_nt, offset + PROBE_LEN
+    win = host.copy()
+    win[offset:offset + PROBE_LEN] = probe.seq
+    truth = win[start:end].copy()
+    cur = torch.from_numpy(win)[None].clone()
+    letters = voc.letters.to(device)
+    kmer_ids = voc.kmer_ids.to(device)
+    pred = []
+    for j in range(start, end):
+        t0 = j - k + 1
+        ids = voc.encode(cur[:, :j]).to(device)[:, :-1]                    # [CLS] + tokens 0..t0-1 (no [SEP])
+        L = ids.shape[1]
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            lg = model(input_ids=ids, attention_mask=causal_attention_mask(1, L, device)).logits[0, -1].float()[kmer_ids]
+        cons = torch.ones(4 ** k, dtype=torch.bool, device=device)
+        for i in range(k - 1):
+            cons &= letters[:, i] == int(cur[0, t0 + i])
+        a = int(letters[lg.masked_fill(~cons, float("-inf")).argmax(), k - 1])
+        cur[0, j] = a
+        pred.append(a)
+    pred = np.array(pred)
+    ham = int((pred != truth).sum())
+    return {"k_revealed_nt": k_nt, "offset": int(offset), "n_generated_nt": int(end - start),
+            "exact": bool(ham == 0), "hamming_nt": ham}
+
+
+def score_run(model, voc, ds, device, pool_size, seed, stride, probes_per_tier=None, floor_n=200, objective="mlm"):
     rng = np.random.default_rng(10_000 + seed)
     pool = random_dna(rng, pool_size, PROBE_LEN)
     fresh_hosts = {p.probe_id: random_dna(rng, 1, WINDOW)[0] for p in ds.probes}
@@ -207,8 +294,9 @@ def score_run(model, voc, ds, device, pool_size, seed, stride, probes_per_tier=N
             if seen.get(p.repetitions, 0) < probes_per_tier:
                 keep.append(p); seen[p.repetitions] = seen.get(p.repetitions, 0) + 1
         probes = keep
-    res = {"kind": "dnabert", "k": voc.k, "pool_size": pool_size, "stride": stride,
-           "floors": [heldout_floor(model, voc, ds.test, device, floor_n)], "probes": []}
+    sc = "causal" if objective == "causal" else "span_pll"
+    res = {"kind": "dnabert", "k": voc.k, "objective": objective, "pool_size": pool_size, "stride": stride,
+           "floors": [heldout_floor(model, voc, ds.test, device, floor_n, objective=objective)], "probes": []}
     for p in probes:
         fo = fresh_off[p.probe_id]
         e = {"probe_id": p.probe_id, "repetitions": p.repetitions, "ranks": {}, "extract": {},
@@ -217,8 +305,8 @@ def score_run(model, voc, ds, device, pool_size, seed, stride, probes_per_tier=N
         if p.repetitions > 0:
             hosts["train"] = (ds.train[p.host_rows[0]], p.offsets[0] if p.offsets else PROBE_OFFSET)
         for hname, (host, off) in hosts.items():
-            e["ranks"][f"span_pll/{hname}"] = rank_probe(model, voc, p, host, pool, device, off, stride)
-            e["extract"][hname] = extract_prefix(model, voc, p, host, device, off)
+            e["ranks"][f"{sc}/{hname}"] = rank_probe(model, voc, p, host, pool, device, off, stride, objective)
+            e["extract"][hname] = (extract_prefix_causal if objective == "causal" else extract_prefix)(model, voc, p, host, device, off)
         res["probes"].append(e)
     return res
 
@@ -240,7 +328,18 @@ def span_mask(ids: torch.Tensor, voc: KmerVocab, rate: float, gen) -> tuple[torc
     return x, labels
 
 
-def train(model, voc, ds, device, out_dir: Path, epochs, lr, batch, accum, mask_rate, seed, save_epochs, log):
+def causal_loss(model, voc, ids):
+    """Next-token loss over all content tokens (predict tokens 0..T-1 from [CLS] + their prefix)."""
+    B, L = ids.shape
+    labels = ids[:, 1:].clone()
+    labels[labels == voc.sep] = -100
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        logits = model(input_ids=ids, attention_mask=causal_attention_mask(B, L, ids.device)).logits[:, :-1]
+    return F.cross_entropy(logits.float().reshape(-1, logits.shape[-1]), labels.reshape(-1), ignore_index=-100)
+
+
+def train(model, voc, ds, device, out_dir: Path, epochs, lr, batch, accum, mask_rate, seed, save_epochs, log,
+          objective="mlm"):
     torch.manual_seed(seed)
     gen = torch.Generator(device=device).manual_seed(seed)
     rng = np.random.default_rng(seed)
@@ -264,9 +363,12 @@ def train(model, voc, ds, device, out_dir: Path, epochs, lr, batch, accum, mask_
                 if len(idx) == 0:
                     continue
                 ids = voc.encode(train_nt[torch.as_tensor(idx)].to(device))
-                x, y = span_mask(ids, voc, mask_rate, gen)
-                with torch.autocast("cuda", dtype=torch.bfloat16):
-                    loss = model(input_ids=x, labels=y).loss
+                if objective == "causal":
+                    loss = causal_loss(model, voc, ids)
+                else:
+                    x, y = span_mask(ids, voc, mask_rate, gen)
+                    with torch.autocast("cuda", dtype=torch.bfloat16):
+                        loss = model(input_ids=x, labels=y).loss
                 (loss / accum).backward()
                 tot += loss.item(); n += 1
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -277,7 +379,7 @@ def train(model, voc, ds, device, out_dir: Path, epochs, lr, batch, accum, mask_
         if ep in save_epochs:
             torch.save(model.state_dict(), out_dir / f"ep{ep}.pt")
     model.eval()
-    return {"epochs": epochs, "steps": step, "lr": lr, "batch": batch * accum, "mask_rate": mask_rate,
+    return {"epochs": epochs, "steps": step, "lr": lr, "batch": batch * accum, "mask_rate": mask_rate, "objective": objective,
             "train_sec": time.time() - t0, "n_params": sum(p.numel() for p in model.parameters())}
 
 
@@ -297,7 +399,10 @@ def main(argv=None):
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--accum", type=int, default=2)
-    ap.add_argument("--mask_rate", type=float, default=0.15)
+    ap.add_argument("--objective", default="mlm", choices=["mlm", "causal"])
+    ap.add_argument("--mask_rate", type=float, default=0.15, help="mlm: fraction of TOKENS masked (DNABERT pretraining: 0.15)")
+    ap.add_argument("--mask_nt_rate", type=float, default=None,
+                    help="mlm: fix the fraction of HIDDEN NUCLEOTIDES instead (token rate = k * this, capped at 0.9)")
     ap.add_argument("--pool", type=int, default=100)
     ap.add_argument("--stride", type=int, default=3, help="score every stride-th nucleotide of the probe")
     ap.add_argument("--save_epochs", default="1,3,8,15,30")
@@ -311,7 +416,16 @@ def main(argv=None):
         args.out = os.path.join(args.out, "smoke")
     device = f"cuda:{args.gpu}"
     torch.cuda.set_device(args.gpu)
-    out_dir = Path(args.out) / f"dnabert{args.k}_s{args.seed}"
+    if args.mask_nt_rate:
+        args.mask_rate = min(0.9, args.mask_nt_rate * args.k)
+    tag = ""
+    if args.objective == "causal":
+        tag = "_causal"
+    elif args.mask_nt_rate:
+        tag = f"_nt{args.mask_nt_rate:g}"
+    if args.lr != 2e-5:
+        tag += f"_lr{args.lr:g}"
+    out_dir = Path(args.out) / f"dnabert{args.k}{tag}_s{args.seed}"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "args.json").write_text(json.dumps(vars(args), indent=1), encoding="utf-8")
     ds = build_dataset(args.n_train, 200, 200, args.probes_per_tier, tuple(int(t) for t in args.tiers.split(",")),
@@ -322,16 +436,16 @@ def main(argv=None):
     t0 = time.time()
     if args.score_epoch0:
         model.eval()
-        sc = score_run(model, voc, ds, device, args.pool, args.seed, args.stride, args.snapshot_probes)
+        sc = score_run(model, voc, ds, device, args.pool, args.seed, args.stride, args.snapshot_probes, objective=args.objective)
         sc.update(epoch=0, score_sec=time.time() - t0)
         (out_dir / "scores_ep0.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
         print(f"[k={args.k} s{args.seed}] ep0 floor {sc['floors'][0]['bits_per_nt_mean']:.3f} ({sc['score_sec']:.0f}s)", flush=True)
     with open(out_dir / "train_log.jsonl", "w", encoding="utf-8") as log:
         summary = train(model, voc, ds, device, out_dir, args.epochs, args.lr, args.batch, args.accum, args.mask_rate,
-                        args.seed, save_epochs, log)
+                        args.seed, save_epochs, log, objective=args.objective)
     (out_dir / "train_summary.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
     t1 = time.time()
-    sc = score_run(model, voc, ds, device, args.pool, args.seed, args.stride)
+    sc = score_run(model, voc, ds, device, args.pool, args.seed, args.stride, objective=args.objective)
     sc.update(train_summary=summary, epoch=args.epochs, score_sec=time.time() - t1, checkpoint="final")
     (out_dir / "scores_final.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
     print(f"[k={args.k} s{args.seed}] final floor {sc['floors'][0]['bits_per_nt_mean']:.3f} ({sc['score_sec']:.0f}s)", flush=True)
@@ -343,7 +457,7 @@ def main(argv=None):
             continue
         model.load_state_dict(torch.load(ck, map_location=device)); model.eval()
         t2 = time.time()
-        s2 = score_run(model, voc, ds, device, args.pool, args.seed, args.stride, args.snapshot_probes)
+        s2 = score_run(model, voc, ds, device, args.pool, args.seed, args.stride, args.snapshot_probes, objective=args.objective)
         s2.update(epoch=e, score_sec=time.time() - t2, checkpoint=f"ep{e}")
         (out_dir / f"scores_ep{e}.json").write_text(json.dumps(s2, indent=1), encoding="utf-8")
         print(f"[k={args.k} s{args.seed}] ep{e} floor {s2['floors'][0]['bits_per_nt_mean']:.3f} ({s2['score_sec']:.0f}s)", flush=True)

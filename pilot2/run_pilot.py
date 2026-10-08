@@ -18,7 +18,7 @@ from pathlib import Path
 import torch
 
 from .data import WINDOW, build_dataset
-from .real_data import build_real_dataset
+from .real_data import DATA_PATHS, REAL_DATA, build_real_dataset
 from .model import Backbone
 from .score import score_run
 from .tokenizers import get_tokenizer
@@ -39,8 +39,8 @@ def main(argv=None):
     ap.add_argument("--tiers", default="1,4,16")
     ap.add_argument("--n_nonmember", type=int, default=40)
     ap.add_argument("--data_seed", type=int, default=1234)
-    ap.add_argument("--data", default="synthetic", choices=["synthetic", "ecoli"], help="synthetic iid DNA, or real E. coli windows")
-    ap.add_argument("--fasta", default="data/genomes/ecoli_K12_MG1655.fna")
+    ap.add_argument("--data", default="synthetic", choices=["synthetic", *REAL_DATA], help="synthetic iid DNA, or real E. coli windows")
+    ap.add_argument("--fasta", default=None, help="override the default path of --data")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--max_steps", type=int, default=None, help="cap optimizer steps (fixed-supervised-token budget)")
     ap.add_argument("--batch", type=int, default=64)
@@ -79,7 +79,8 @@ def main(argv=None):
 
     t0 = time.time()
     tiers = tuple(int(t) for t in args.tiers.split(","))
-    if args.data == "ecoli":
+    if args.data != "synthetic":
+        args.fasta = args.fasta or DATA_PATHS[args.data]
         ds = build_real_dataset(args.fasta, args.n_train, args.n_val, args.n_test, args.probes_per_tier, tiers,
                                 args.n_nonmember, args.data_seed, offset_mode=args.probe_offset)
     else:

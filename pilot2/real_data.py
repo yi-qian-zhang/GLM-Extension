@@ -27,6 +27,39 @@ from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, Dataset, Probe, random_dna
 _ENC = {"A": 1, "C": 2, "G": 3, "T": 4}
 
 
+# Alex's real datasets (config/*.yaml, src/data/real_data_loader.py): E. coli K-12 MG1655 (GCF_000005845.2),
+# yeast S288C R64 (GCF_000146045.2), and the GUE human promoter set prom_300_all (leannmlindsey/GUE, 300-nt rows).
+DATA_PATHS = {
+    "ecoli": "data/genomes/ecoli_K12_MG1655.fna",
+    "yeast": "data/genomes/yeast_S288C_R64.fna",
+    "gue": "data/gue/prom_300_all_train.csv",
+}
+REAL_DATA = tuple(DATA_PATHS)
+
+
+def read_sequences_csv(path: str | Path, window: int = WINDOW) -> np.ndarray:
+    """One sequence per row (column 'sequence'); centre-crop to `window`, drop short / non-ACGT rows."""
+    import csv
+    out = []
+    with open(path, "r", encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            s = row["sequence"].strip().upper()
+            if len(s) < window:
+                continue
+            a = (len(s) - window) // 2
+            s = s[a:a + window]
+            if all(c in _ENC for c in s):
+                out.append([_ENC[c] for c in s])
+    return np.array(out, dtype=np.int64)
+
+
+def load_windows(path: str | Path) -> np.ndarray:
+    """Genome FASTA -> non-overlapping windows; CSV of fixed-length sequences -> one window per row."""
+    if str(path).endswith(".csv"):
+        return read_sequences_csv(path)
+    return windows_from_genome(read_fasta(path))
+
+
 def read_fasta(path: str | Path) -> str:
     seq = []
     with open(path, "r", encoding="utf-8") as f:
@@ -61,7 +94,7 @@ def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500
     assert offset_mode in ("fixed", "random"), offset_mode
     rng = np.random.default_rng(data_seed)
     off_rng = np.random.default_rng(data_seed + 7_777)
-    all_w = windows_from_genome(read_fasta(fasta))
+    all_w = load_windows(fasta)
     assert len(all_w) >= n_train + n_val + n_test, (len(all_w), n_train, n_val, n_test)
     perm = rng.permutation(len(all_w))
     train = all_w[perm[:n_train]]

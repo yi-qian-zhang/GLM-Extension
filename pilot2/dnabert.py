@@ -46,7 +46,7 @@ import torch
 import torch.nn.functional as F
 
 from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, Probe, build_dataset, random_dna
-from .real_data import build_real_dataset
+from .real_data import DATA_PATHS, REAL_DATA, build_real_dataset
 
 NT = "ACGT"                       # pilot2 nt ids: A=1, C=2, G=3, T=4
 MODEL_ROOT = "/data/wh/yqdata/models/DNABERT"
@@ -396,9 +396,9 @@ def main(argv=None):
     ap.add_argument("--n_nonmember", type=int, default=40)
     ap.add_argument("--data_seed", type=int, default=1234)
     ap.add_argument("--probe_offset", default="random", choices=["fixed", "random"])
-    ap.add_argument("--data", default="synthetic", choices=["synthetic", "ecoli"],
+    ap.add_argument("--data", default="synthetic", choices=["synthetic", *REAL_DATA],
                     help="synthetic iid DNA, or real E. coli windows (held-out E. coli loss then doubles as the utility metric)")
-    ap.add_argument("--fasta", default="data/genomes/ecoli_K12_MG1655.fna")
+    ap.add_argument("--fasta", default=None, help="override the default path of --data")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--batch", type=int, default=8)
@@ -429,13 +429,14 @@ def main(argv=None):
         tag = f"_nt{args.mask_nt_rate:g}"
     if args.lr != 2e-5:
         tag += f"_lr{args.lr:g}"
-    if args.data == "ecoli":
-        tag += "_ecoli"
+    if args.data != "synthetic":
+        tag += f"_{args.data}"
     out_dir = Path(args.out) / f"dnabert{args.k}{tag}_s{args.seed}"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "args.json").write_text(json.dumps(vars(args), indent=1), encoding="utf-8")
     tiers = tuple(int(t) for t in args.tiers.split(","))
-    if args.data == "ecoli":
+    if args.data != "synthetic":
+        args.fasta = args.fasta or DATA_PATHS[args.data]
         ds = build_real_dataset(args.fasta, args.n_train, 200, 200, args.probes_per_tier, tiers, args.n_nonmember,
                                 args.data_seed, offset_mode=args.probe_offset)
     else:

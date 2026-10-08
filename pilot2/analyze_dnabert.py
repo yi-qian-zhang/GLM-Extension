@@ -17,7 +17,8 @@ from pathlib import Path
 
 import numpy as np
 
-RUN = re.compile(r"dnabert(?P<k>\d)(?P<var>_[A-Za-z0-9._-]+?)?_s(?P<seed>\d+)")
+RUN = re.compile(r"dnabert(?P<k>\d|2bpe)(?P<var>_[A-Za-z0-9._-]+?)?_s(?P<seed>\d+)")
+KLABEL = lambda k: "BPE" if k == 7 else str(k)   # DNABERT-2 (BPE) sorts after the 6-mer
 GRID = (2.03, 2.05, 2.10, 2.20, 2.40)
 
 
@@ -46,7 +47,7 @@ def main(argv=None):
             if not f.exists():
                 continue
             r = json.loads(f.read_text(encoding="utf-8"))
-            row = {"k": int(m["k"]), "var": (m["var"] or "_mlm").lstrip("_"), "seed": int(m["seed"]), "epoch": int(r["epoch"]),
+            row = {"k": 7 if m["k"] == "2bpe" else int(m["k"]), "var": (m["var"] or "_mlm").lstrip("_"), "seed": int(m["seed"]), "epoch": int(r["epoch"]),
                    "floor": r["floors"][0]["bits_per_nt_mean"]}
             for t in (0, 1, 4, 16):
                 for host in ("train", "fresh"):
@@ -75,7 +76,7 @@ def main(argv=None):
         cells = [mean_stat((1, "train")), mean_stat((4, "train")), mean_stat((16, "train")), mean_stat((16, "fresh"))]
         fp = mean_stat((0, "fresh"))
         agg[(var, k, e)] = (fl, cells)
-        md.append(f"| {var} | {k} | {e} | {fl:.3f} | " + " | ".join(fmt(c) for c in cells) + (f" | {fp[1]:.2f} |" if fp else " | — |"))
+        md.append(f"| {var} | {KLABEL(k)} | {e} | {fl:.3f} | " + " | ".join(fmt(c) for c in cells) + (f" | {fp[1]:.2f} |" if fp else " | — |"))
     # matched-floor interpolation per k (seed-mean curves, from the least-overfit epoch onward)
     md += ["", "## Memorisation at matched held-out floor (r=1 and r=16, training host; lower = more memorised)", "",
            "| variant | k | tier | " + " | ".join(f"@{x:.2f}" for x in GRID) + " |", "|---|---|---|" + "---|" * len(GRID)]
@@ -88,7 +89,7 @@ def main(argv=None):
             f2, b2 = fl[start:], b[start:]
             order = np.argsort(f2); f2, b2 = f2[order], b2[order]
             cells = [f"{np.interp(x, f2, b2):.3f}" if f2[0] <= x <= f2[-1] else "—" for x in GRID]
-            md.append(f"| {var} | {k} | r={t} | " + " | ".join(cells) + " |")
+            md.append(f"| {var} | {KLABEL(k)} | r={t} | " + " | ".join(cells) + " |")
     out = root / "dnabert_report.md"
     out.write_text("\n".join(md), encoding="utf-8")
     print("\n".join(md)); print(f"-> {out}")

@@ -94,7 +94,8 @@ def main(argv=None):
         ax.text(x[i] - w / 2, fixed[i] + 1, f"{fixed[i]:.0f}%", ha="center", fontsize=9)
         ax.text(x[i] + w / 2, rnd[i] + 1, f"{rnd[i]:.0f}%", ha="center", fontsize=9)
     ax.set_xticks(x, labels); ax.set_ylim(0, 70); ax.legend(frameon=False, fontsize=9)
-    style(ax, "Share of variance in canary memorisation (fixed backbone, 3 tokenizers x 3 objectives x 2 seeds)", "", "share of variance (%)")
+    style(ax, "Share of variance in canary memorisation
+(fixed backbone: 3 tokenizers x 3 objectives x 2 seeds)", "", "share of variance (%)")
     fig.tight_layout(); fig.savefig(out / "F1_variance.png", dpi=200); plt.close(fig)
 
     # ---------------- F2 matched-floor curves, synthetic + E. coli
@@ -107,7 +108,7 @@ def main(argv=None):
         style(ax, title, "held-out loss, bits/nt (overfitting)", "canary memorised (%)")
         ax.set_xlim(2.0, 2.45); ax.legend(frameon=False, fontsize=9)
     fig.suptitle("Memorisation of a canary seen once, at matched held-out loss (causal objective, random placement)", fontsize=10, x=0.01, ha="left")
-    fig.tight_layout(); fig.savefig(out / "F2_matched_floor.png", dpi=200); plt.close(fig)
+    fig.tight_layout(rect=(0, 0, 1, 0.95)); fig.savefig(out / "F2_matched_floor.png", dpi=200); plt.close(fig)
 
     # ---------------- F3 DNABERT family
     rows = dnabert_rows(O / "dnabert" / "dnabert_report.md", "causal")
@@ -120,17 +121,17 @@ def main(argv=None):
     ax.bar(x + w / 2, fr, w, color=C["6mer"], label="in a new sequence, new position")
     for i in range(4):
         ax.text(x[i] - w / 2, tr[i] + 2, f"{tr[i]:.0f}%", ha="center", fontsize=9); ax.text(x[i] + w / 2, fr[i] + 2, f"{fr[i]:.0f}%", ha="center", fontsize=9)
-    ax.set_xticks(x, [f"DNABERT {k}-mer" for k in ks]); ax.set_ylim(0, 112); ax.legend(frameon=False, fontsize=9, loc="upper left")
-    style(ax, "Canary seen 16x: recognised (rank 1 of 101) after 30 epochs, 3 seeds", "", "recognised (%)")
+    ax.set_xticks(x, [f"{k}-mer" for k in ks]); ax.set_ylim(0, 125); ax.legend(frameon=False, fontsize=8.5, loc="upper left")
+    style(ax, "Recognised after 30 epochs (rank 1 of 101), 3 seeds", "DNABERT variant", "recognised (%)")
     ax = axes[1]
     for k in ks:
         pts = sorted((e, v) for (kk, e), v in e100.items() if kk == k and e > 0)
         if pts:
             ax.plot([e for e, _ in pts], [mem(v[1][2][0]) for _, v in pts], "o-", color=KC[k], lw=2, ms=4, label=f"{k}-mer")
-    style(ax, "Canary seen 16x: memorised over 100 epochs (one seed)", "epoch", "canary memorised (%)")
+    style(ax, "Memorised over 100 epochs (one seed)", "epoch", "canary memorised (%)")
     ax.legend(frameon=False, fontsize=9)
-    fig.suptitle("Pretrained DNABERT family fine-tuned with canaries (same architecture, data and objective; only k differs)", fontsize=10, x=0.01, ha="left")
-    fig.tight_layout(); fig.savefig(out / "F3_dnabert_family.png", dpi=200); plt.close(fig)
+    fig.suptitle("Canary seen 16x — pretrained DNABERT family fine-tuned with canaries (same architecture, data, objective; only k differs)", fontsize=10, x=0.01, ha="left")
+    fig.tight_layout(rect=(0, 0, 1, 0.95)); fig.savefig(out / "F3_dnabert_family.png", dpi=200); plt.close(fig)
 
     # ---------------- F4 position
     fig, ax = plt.subplots(figsize=(6.4, 3.4))
@@ -143,8 +144,8 @@ def main(argv=None):
         ax.bar(x + (i - 1) * w, v, w, color=cols[i], label=lab)
         for j in range(3):
             ax.text(x[j] + (i - 1) * w, v[j] + 2, f"{v[j]}%", ha="center", fontsize=8.5)
-    ax.set_xticks(x, toks); ax.set_ylim(0, 115); ax.legend(frameon=False, fontsize=8.5, loc="upper left")
-    style(ax, "Canary seen 16x, placed in a new sequence: recognised (%) — from-scratch backbone", "", "recognised (%)")
+    ax.set_xticks(x, toks); ax.set_ylim(0, 150); ax.legend(frameon=False, fontsize=8.5, loc="upper left", ncol=1)
+    style(ax, "Canary seen 16x, placed in a new sequence (from-scratch backbone)", "", "recognised (%)")
     fig.tight_layout(); fig.savefig(out / "F4_position.png", dpi=200); plt.close(fig)
 
     # ---------------- F5 real models over epochs

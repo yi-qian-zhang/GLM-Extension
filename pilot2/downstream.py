@@ -87,8 +87,14 @@ class _Backbone(torch.nn.Module):
         return self.model.config.hidden_size
 
 
+def _micro(L, target):
+    """micro-batch size by sequence length (attention memory ~ L^2): 500-nt rows use 1/4 of the 100-nt batch."""
+    return max(1, target // (1 if L <= 128 else 2 if L <= 300 else 4))
+
+
 @torch.no_grad()
 def _features(bb, seqs, device, batch=64):
+    batch = _micro(len(seqs[0]), batch)
     out = []
     for i in range(0, len(seqs), batch):
         with torch.autocast("cuda", dtype=torch.bfloat16):
@@ -124,27 +130,31 @@ def finetune_probe(bb, tr, te, n_cls, device, lr=3e-5, batch=32, epochs=2, seed=
     params = list(m.parameters()) + list(head.parameters())
     opt = torch.optim.AdamW(params, lr=lr, weight_decay=0.01)
     steps = epochs * math.ceil(len(tr) / batch); warm = max(1, int(0.1 * steps)); step = 0
+    micro = _micro(len(tr[0][0]), batch)                 # gradient accumulation keeps the effective batch at `batch`
     rng = np.random.default_rng(seed)
     for _ in range(epochs):
         order = rng.permutation(len(tr))
         for i in range(0, len(order), batch):
             idx = order[i:i + batch]
-            seqs = [tr[j][0] for j in idx]; y = torch.tensor([tr[j][1] for j in idx], device=device)
             for g in opt.param_groups:
                 g["lr"] = lr * min(1.0, (step + 1) / warm)
             opt.zero_grad(set_to_none=True)
-            with torch.autocast("cuda", dtype=torch.bfloat16):
-                logits = head(bb2(seqs, device).float())
-            loss = F.cross_entropy(logits.float(), y)
-            loss.backward()
+            for a in range(0, len(idx), micro):
+                sub = idx[a:a + micro]
+                seqs = [tr[j][0] for j in sub]; y = torch.tensor([tr[j][1] for j in sub], device=device)
+                with torch.autocast("cuda", dtype=torch.bfloat16):
+                    logits = head(bb2(seqs, device).float())
+                loss = F.cross_entropy(logits.float(), y) * (len(sub) / len(idx))
+                loss.backward()
             torch.nn.utils.clip_grad_norm_(params, 1.0)
             opt.step(); step += 1
     m.eval()
     preds = []
     with torch.no_grad():
-        for i in range(0, len(te), 64):
+        eb = _micro(len(te[0][0]), 64)
+        for i in range(0, len(te), eb):
             with torch.autocast("cuda", dtype=torch.bfloat16):
-                preds.append(head(bb2([s for s, _ in te[i:i + 64]], device).float()).argmax(-1).cpu())
+                preds.append(head(bb2([s for s, _ in te[i:i + eb]], device).float()).argmax(-1).cpu())
     p = torch.cat(preds).numpy(); yte = np.array([y for _, y in te])
     del m, bb2, head, opt
     torch.cuda.empty_cache()

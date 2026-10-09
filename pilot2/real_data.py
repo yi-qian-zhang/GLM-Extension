@@ -104,9 +104,10 @@ def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500
         pool_seqs, _ = load_canaries(canary_npz)
         need = probes_per_tier * len(tiers) + n_nonmember
         assert len(pool_seqs) >= need, (len(pool_seqs), need)
-        pool_seqs = pool_seqs[rng.permutation(len(pool_seqs))[:need]]
+        perm = rng.permutation(len(pool_seqs))
+        probe_seqs, rank_pool = pool_seqs[perm[:need]], pool_seqs[perm[need:]]
         pool_i = iter(range(need))
-        next_probe_seq = lambda: pool_seqs[next(pool_i)].copy()
+        next_probe_seq = lambda: probe_seqs[next(pool_i)].copy()
     else:
         next_probe_seq = lambda: random_dna(rng, 1, PROBE_LEN)[0]
     off_rng = np.random.default_rng(data_seed + 7_777)
@@ -148,6 +149,10 @@ def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500
     ds = Dataset(all_train, val, test, probes, tag, data_seed)
     ds.source = str(fasta)
     ds.canary_source = str(canary_npz) if canary_npz else "iid_uniform"
+    if canary_npz:
+        # the ranking pool has to be as real and as rare as the canary, otherwise any real sequence
+        # outranks uniform random DNA and a non-member scores rank 1 regardless of membership
+        ds.pool_seqs = rank_pool
     ds.h0_bits_train = zero_order_entropy_bits(train)
     ds.h0_bits_test = zero_order_entropy_bits(test)
     return ds

@@ -37,8 +37,13 @@ HUMAN_WIDE = ["prom_core_all", "human_tf_0", "splice_reconstructed"]
 def load_task(task, n_train=N_TRAIN, seed=0):
     def read(split):
         with open(GUE_DIR / f"{task}_{split}.csv", encoding="utf-8", newline="") as f:
-            rows = [(r["sequence"].strip().upper(), int(r["label"])) for r in csv.DictReader(f)]
-        return [(s, y) for s, y in rows if set(s) <= set("ACGT")]
+            rows = [(r["sequence"].strip().upper(), int(r["label"])) for r in csv.DictReader(f)
+                    if r.get("label") not in (None, "") and r.get("sequence")]
+        rows = [(s, y) for s, y in rows if set(s) <= set("ACGT")]
+        # a handful of GUE rows have odd lengths (e.g. 449 among 500-nt rows); keep the modal length so batches stack
+        from collections import Counter
+        L = Counter(len(s) for s, _ in rows).most_common(1)[0][0]
+        return [(s, y) for s, y in rows if len(s) == L]
     tr, te = read("train"), read("test")
     rng = np.random.default_rng(seed)
     idx = rng.permutation(len(tr))[:n_train]

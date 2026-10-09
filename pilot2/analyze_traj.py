@@ -29,7 +29,7 @@ try:
 except Exception:  # pragma: no cover
     plt = None
 
-RUN = re.compile(r"(?P<tok>char|\d+mer(?:sp)?)_(?P<obj>ar|mlm[0-9.]+)_s(?P<seed>\d+)")
+RUN = re.compile(r"(?P<tok>char|\d+mer(?:sp)?|bpe\d+)(?:_(?:ecoli|yeast|gue|human))?_(?P<obj>ar|mlm[0-9.]+)_s(?P<seed>\d+)")
 
 
 def summarize(r, tier, host):

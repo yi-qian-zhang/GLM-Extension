@@ -41,6 +41,7 @@ def main(argv=None):
     ap.add_argument("--data_seed", type=int, default=1234)
     ap.add_argument("--data", default="synthetic", choices=["synthetic", *REAL_DATA], help="synthetic iid DNA, or real E. coli windows")
     ap.add_argument("--fasta", default=None, help="override the default path of --data")
+    ap.add_argument("--canary_npz", default=None, help="real-canary pool from pilot2.human_canary (default: iid uniform 96-mers)")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--max_steps", type=int, default=None, help="cap optimizer steps (fixed-supervised-token budget)")
     ap.add_argument("--batch", type=int, default=64)
@@ -82,7 +83,8 @@ def main(argv=None):
     if args.data != "synthetic":
         args.fasta = args.fasta or DATA_PATHS[args.data]
         ds = build_real_dataset(args.fasta, args.n_train, args.n_val, args.n_test, args.probes_per_tier, tiers,
-                                args.n_nonmember, args.data_seed, offset_mode=args.probe_offset)
+                                args.n_nonmember, args.data_seed, offset_mode=args.probe_offset,
+                                canary_npz=args.canary_npz)
     else:
         ds = build_dataset(args.n_train, args.n_val, args.n_test, args.probes_per_tier, tiers, args.n_nonmember,
                            args.data_seed, offset_mode=args.probe_offset)

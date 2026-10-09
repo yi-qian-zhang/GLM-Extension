@@ -201,7 +201,8 @@ def score_run(model, tok: KmerTokenizer, kind: str, ds: Dataset, device, pool_si
     fresh host at a new random offset (`phase_match` = fraction of training copies whose
     k-mer phase equals the fresh offset's)."""
     rng = np.random.default_rng(10_000 + seed)
-    pool = random_dna(rng, pool_size, PROBE_LEN)
+    real_pool = getattr(ds, "pool_seqs", None)            # real canaries -> rank against real segments
+    pool = random_dna(rng, pool_size, PROBE_LEN) if real_pool is None else real_pool[:pool_size]
     fresh_hosts = {p.probe_id: random_dna(rng, 1, WINDOW)[0] for p in ds.probes}
     off_rng = np.random.default_rng(20_000 + seed)
     fresh_off = {p.probe_id: (PROBE_OFFSET if offset_mode == "fixed"

@@ -73,18 +73,25 @@ def scan_variants(vcf: str | Path, max_af: float, max_carriers: int, limit: int 
                 continue
             if flt not in ("PASS", "."):
                 continue
-            af = None
+            # 1000 Genomes rounds the INFO AF field to two decimals, so every variant rarer than
+            # 1 % reads as 0.00; the exact frequency is AC/AN.
+            ac = an = af = None
             for kv in info.split(";"):
-                if kv.startswith("AF="):
+                if kv.startswith("AC="):
+                    ac = int(kv[3:].split(",")[0])
+                elif kv.startswith("AN="):
+                    an = int(kv[3:])
+                elif kv.startswith("AF="):
                     af = float(kv[3:].split(",")[0])
-                    break
-            if af is None or af <= 0 or af > max_af:
+            if ac is not None and an:
+                af = ac / an
+            if af is None or ac == 0 or af > max_af:
                 continue
             gts = p[9].rstrip("\n").split("\t")
             carriers = [i for i, g in enumerate(gts) if "1" in g[:3]]
             if not carriers or len(carriers) > max_carriers:
                 continue
-            kept.append({"pos": int(p[1]), "ref": ref, "alt": alt, "af": af,
+            kept.append({"pos": int(p[1]), "ref": ref, "alt": alt, "af": af, "ac": ac, "an": an,
                          "n_carriers": len(carriers), "carrier": samples[carriers[0]]})
             if limit and len(kept) >= limit:
                 break
@@ -150,6 +157,9 @@ def main(argv=None):
     variants = scan_variants(args.vcf, args.max_af, args.max_carriers, args.scan_limit)
     print(f"[human] {len(variants):,} rare biallelic SNVs (AF <= {args.max_af}, <= {args.max_carriers} carriers)", flush=True)
     cans = build_canaries(variants, genome, args.n, args.seed)
+    print(f"[human] {len(cans):,} canaries built (of {args.n} requested)", flush=True)
+    if not cans:
+        raise SystemExit("no canaries: loosen --max_af / --max_carriers or lower --min_gap")
     seqs = np.stack([encode(c["seq"]) for c in cans])
     nv = np.array([len(c["variants"]) for c in cans])
     af = np.array([v["af"] for c in cans for v in c["variants"]])

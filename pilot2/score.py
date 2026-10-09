@@ -20,7 +20,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, Dataset, Probe, random_dna
+from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, Dataset, Probe, random_dna, decode
 from .tokenizers import KmerTokenizer
 from .train import with_bos
 
@@ -192,7 +192,8 @@ def extract_prefix(model, tok, kind, probe: Probe, host: np.ndarray, device, k_n
     ham = int((pred_nt != truth_nt).sum())
     return {"k_revealed_nt": k_nt, "offset": int(offset), "n_generated_nt": int(end_nt - start_nt),
             "n_generated_tok": int(end - start),
-            "exact": bool(ham == 0), "hamming_nt": ham, "chance_exact": float(4.0 ** -(end_nt - start_nt))}
+            "exact": bool(ham == 0), "hamming_nt": ham, "chance_exact": float(4.0 ** -(end_nt - start_nt)),
+            "pred_nt": decode(pred_nt.cpu().numpy()), "truth_nt": decode(truth_nt.cpu().numpy())}
 
 
 def score_run(model, tok: KmerTokenizer, kind: str, ds: Dataset, device, pool_size=500, seed=0, floor_n=500,

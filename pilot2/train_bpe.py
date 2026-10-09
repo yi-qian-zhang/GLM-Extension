@@ -18,7 +18,7 @@ import numpy as np
 from tokenizers import Tokenizer, models, trainers
 
 from .data import WINDOW, random_dna
-from .real_data import read_fasta, windows_from_genome
+from .real_data import load_windows, read_fasta, windows_from_genome
 
 _DEC = {1: "A", 2: "C", 3: "G", 4: "T"}
 
@@ -43,10 +43,15 @@ def main(argv=None):
     ap.add_argument("--vocab", type=int, default=4096)
     ap.add_argument("--out", default="data/tokenizers")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--synthetic", action="store_true", help="train on iid uniform DNA instead of a genome")
+    ap.add_argument("--n_synthetic", type=int, default=16000)
     args = ap.parse_args(argv)
 
-    genome = read_fasta(args.fasta)
-    real = windows_from_genome(genome)                 # (N, 288) ids
+    if args.synthetic:                                 # iid uniform DNA: the tokenizer axis's own corpus
+        real = random_dna(np.random.default_rng(args.seed), args.n_synthetic, WINDOW)
+        args.fasta = f"synthetic:{args.n_synthetic}x{WINDOW}@seed{args.seed}"
+    else:
+        real = load_windows(args.fasta)                     # (N, 288) ids; FASTA genome or CSV rows
     real_str = ids_to_str(real)
     tok = Tokenizer(models.BPE(unk_token=None))
     # no pre-tokenizer: each window is one "word", merges run over the whole string

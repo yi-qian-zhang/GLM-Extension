@@ -213,7 +213,7 @@ def extract_prefix(model, voc, probe: Probe, host, device, offset, objective, k_
     pred = gen[:len(truth)]
     ham = sum(1 for a, b in zip(pred, truth) if a != b) + max(0, len(truth) - len(pred))
     return {"k_revealed_nt": int(revealed - offset), "offset": int(offset), "n_generated_nt": int(len(truth)),
-            "exact": bool(ham == 0), "hamming_nt": int(ham)}
+            "exact": bool(ham == 0), "hamming_nt": int(ham), "pred_nt": pred, "truth_nt": truth}
 
 
 def score_run(model, voc, ds, device, pool_size, seed, probes_per_tier=None, floor_n=200, objective="mlm"):
@@ -320,6 +320,7 @@ def main(argv=None):
     ap.add_argument("--probe_offset", default="random", choices=["fixed", "random"])
     ap.add_argument("--data", default="synthetic", choices=["synthetic", *REAL_DATA])
     ap.add_argument("--fasta", default=None, help="override the default path of --data")
+    ap.add_argument("--canary_npz", default=None, help="real-canary pool from pilot2.human_canary (default: iid uniform 96-mers)")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--batch", type=int, default=8)
@@ -352,7 +353,8 @@ def main(argv=None):
     if args.data != "synthetic":
         args.fasta = args.fasta or DATA_PATHS[args.data]
         ds = build_real_dataset(args.fasta, args.n_train, 200, 200, args.probes_per_tier, tiers, args.n_nonmember,
-                                args.data_seed, offset_mode=args.probe_offset)
+                                args.data_seed, offset_mode=args.probe_offset,
+                                canary_npz=args.canary_npz)
     else:
         ds = build_dataset(args.n_train, 200, 200, args.probes_per_tier, tiers, args.n_nonmember, args.data_seed,
                            offset_mode=args.probe_offset)

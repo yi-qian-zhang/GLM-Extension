@@ -33,6 +33,7 @@ DATA_PATHS = {
     "ecoli": "data/genomes/ecoli_K12_MG1655.fna",
     "yeast": "data/genomes/yeast_S288C_R64.fna",
     "gue": "data/gue/prom_300_all_train.csv",
+    "human": "data/human/chr22.fa",
 }
 REAL_DATA = tuple(DATA_PATHS)
 
@@ -89,10 +90,20 @@ def zero_order_entropy_bits(x: np.ndarray) -> float:
 
 def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500, n_test: int = 500,
                        probes_per_tier: int = 30, tiers=(1, 4, 8, 16), n_nonmember: int = 40,
-                       data_seed: int = 1234, offset_mode: str = "fixed") -> Dataset:
+                       data_seed: int = 1234, offset_mode: str = "fixed", canary_npz=None) -> Dataset:
     """offset_mode as in pilot2.data.build_dataset: 'fixed' = every copy at PROBE_OFFSET, 'random' = per-copy offset."""
     assert offset_mode in ("fixed", "random"), offset_mode
     rng = np.random.default_rng(data_seed)
+    if canary_npz:            # real human haplotype segments instead of iid uniform 96-mers
+        from .human_canary import load_canaries
+        pool_seqs, _ = load_canaries(canary_npz)
+        need = probes_per_tier * len(tiers) + n_nonmember
+        assert len(pool_seqs) >= need, (len(pool_seqs), need)
+        pool_seqs = pool_seqs[rng.permutation(len(pool_seqs))[:need]]
+        pool_i = iter(range(need))
+        next_probe_seq = lambda: pool_seqs[next(pool_i)].copy()
+    else:
+        next_probe_seq = lambda: random_dna(rng, 1, PROBE_LEN)[0]
     off_rng = np.random.default_rng(data_seed + 7_777)
     all_w = load_windows(fasta)
     assert len(all_w) >= n_train + n_val + n_test, (len(all_w), n_train, n_val, n_test)
@@ -108,7 +119,7 @@ def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500
     probes, extra_rows, extra_pid, extra_off, pid = [], [], [], [], 0
     for r in tiers:
         for _ in range(probes_per_tier):
-            seq = random_dna(rng, 1, PROBE_LEN)[0]
+            seq = next_probe_seq()
             for _ in range(r):
                 host = remainder[ridx % len(remainder)].copy(); ridx += 1
                 off = PROBE_OFFSET if offset_mode == "fixed" else int(off_rng.integers(0, WINDOW - PROBE_LEN + 1))
@@ -116,7 +127,7 @@ def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500
                 extra_rows.append(host); extra_pid.append(pid); extra_off.append(off)
             probes.append(Probe(pid, r, seq, [])); pid += 1
     for _ in range(n_nonmember):
-        probes.append(Probe(pid, 0, random_dna(rng, 1, PROBE_LEN)[0], [])); pid += 1
+        probes.append(Probe(pid, 0, next_probe_seq(), [])); pid += 1
 
     all_train = np.concatenate([train, np.stack(extra_rows)], axis=0)
     tag = np.concatenate([np.full(n_train, -1, dtype=np.int64), np.array(extra_pid, dtype=np.int64)])
@@ -131,6 +142,7 @@ def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500
             assert np.array_equal(all_train[row, off:off + PROBE_LEN], p.seq)
     ds = Dataset(all_train, val, test, probes, tag, data_seed)
     ds.source = str(fasta)
+    ds.canary_source = str(canary_npz) if canary_npz else "iid_uniform"
     ds.h0_bits_train = zero_order_entropy_bits(train)
     ds.h0_bits_test = zero_order_entropy_bits(test)
     return ds

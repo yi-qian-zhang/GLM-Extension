@@ -45,7 +45,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, Probe, build_dataset, random_dna
+from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, Probe, build_dataset, decode, random_dna
 from .real_data import DATA_PATHS, REAL_DATA, build_real_dataset
 
 NT = "ACGT"                       # pilot2 nt ids: A=1, C=2, G=3, T=4
@@ -207,7 +207,7 @@ def extract_prefix(model, voc, probe: Probe, host: np.ndarray, device, offset: i
     pred = np.array(pred)
     ham = int((pred != truth).sum())
     return {"k_revealed_nt": k_nt, "offset": int(offset), "n_generated_nt": int(end - start),
-            "exact": bool(ham == 0), "hamming_nt": ham}
+            "exact": bool(ham == 0), "hamming_nt": ham, "pred_nt": decode(pred), "truth_nt": decode(truth)}
 
 
 
@@ -279,7 +279,7 @@ def extract_prefix_causal(model, voc: KmerVocab, probe: Probe, host: np.ndarray,
     pred = np.array(pred)
     ham = int((pred != truth).sum())
     return {"k_revealed_nt": k_nt, "offset": int(offset), "n_generated_nt": int(end - start),
-            "exact": bool(ham == 0), "hamming_nt": ham}
+            "exact": bool(ham == 0), "hamming_nt": ham, "pred_nt": decode(pred), "truth_nt": decode(truth)}
 
 
 def score_run(model, voc, ds, device, pool_size, seed, stride, probes_per_tier=None, floor_n=200, objective="mlm"):
@@ -399,6 +399,7 @@ def main(argv=None):
     ap.add_argument("--data", default="synthetic", choices=["synthetic", *REAL_DATA],
                     help="synthetic iid DNA, or real E. coli windows (held-out E. coli loss then doubles as the utility metric)")
     ap.add_argument("--fasta", default=None, help="override the default path of --data")
+    ap.add_argument("--canary_npz", default=None, help="real-canary pool from pilot2.human_canary (default: iid uniform 96-mers)")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--batch", type=int, default=8)
@@ -440,7 +441,8 @@ def main(argv=None):
     if args.data != "synthetic":
         args.fasta = args.fasta or DATA_PATHS[args.data]
         ds = build_real_dataset(args.fasta, args.n_train, 200, 200, args.probes_per_tier, tiers, args.n_nonmember,
-                                args.data_seed, offset_mode=args.probe_offset)
+                                args.data_seed, offset_mode=args.probe_offset,
+                                canary_npz=args.canary_npz)
     else:
         ds = build_dataset(args.n_train, 200, 200, args.probes_per_tier, tiers, args.n_nonmember, args.data_seed,
                            offset_mode=args.probe_offset)

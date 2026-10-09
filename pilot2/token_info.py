@@ -113,8 +113,16 @@ def main(argv=None):
             m = RUN.fullmatch(d.name) if d.is_dir() else None
             if not m or m["obj"] != "ar":
                 continue
-            if m["data"] and m["data"] != args.data:   # a run name may carry its dataset; a plain name
-                continue                                   # belongs to whatever --data the roots were built with
+            # the directory name is not authoritative: a plain name such as bpe4096_ar_s0 is a
+            # synthetic run that would otherwise be pooled into a real-data grid. args.json is.
+            aj = d / "args.json"
+            run_data = "synthetic"
+            if aj.exists():
+                run_data = json.loads(aj.read_text(encoding="utf-8")).get("data", "synthetic")
+            elif m["data"]:
+                run_data = m["data"]
+            if run_data != args.data:
+                continue
             for f in sorted(d.glob("scores_ep*.json"), key=lambda p: int(p.stem.split("ep")[1])):
                 r = json.loads(f.read_text(encoding="utf-8"))
                 if "vocab_file" in r:

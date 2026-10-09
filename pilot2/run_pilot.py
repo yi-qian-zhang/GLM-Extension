@@ -42,6 +42,9 @@ def main(argv=None):
     ap.add_argument("--data", default="synthetic", choices=["synthetic", *REAL_DATA], help="synthetic iid DNA, or real E. coli windows")
     ap.add_argument("--fasta", default=None, help="override the default path of --data")
     ap.add_argument("--canary_npz", default=None, help="real-canary pool from pilot2.human_canary (default: iid uniform 96-mers)")
+    ap.add_argument("--enrich_k", type=int, default=None,
+                    help="synthetic only: make the canaries' own k-mers more common in the corpus")
+    ap.add_argument("--enrich_factor", type=float, default=1.0)
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--max_steps", type=int, default=None, help="cap optimizer steps (fixed-supervised-token budget)")
     ap.add_argument("--batch", type=int, default=64)
@@ -73,7 +76,10 @@ def main(argv=None):
     kind, _ = parse_objective(args.objective)
     tok = get_tokenizer(args.tokenizer, WINDOW)
     assert kind == "ar" or not hasattr(tok, "fill_id"), "spaced k-mer tokenizers are AR only"
-    name = f"{tok.name}_{args.objective.replace('@', '')}_s{args.seed}"
+    name = f"{tok.name}_{args.objective.replace('@', '')}"
+    if args.enrich_k and args.enrich_factor != 1.0:
+        name += f"_enr{args.enrich_k}x{args.enrich_factor:g}"
+    name += f"_s{args.seed}"
     out_dir = Path(args.out) / name
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "args.json").write_text(json.dumps(vars(args), indent=1), encoding="utf-8")
@@ -87,7 +93,8 @@ def main(argv=None):
                                 canary_npz=args.canary_npz)
     else:
         ds = build_dataset(args.n_train, args.n_val, args.n_test, args.probes_per_tier, tiers, args.n_nonmember,
-                           args.data_seed, offset_mode=args.probe_offset)
+                           args.data_seed, offset_mode=args.probe_offset,
+                           enrich_k=args.enrich_k, enrich_factor=args.enrich_factor)
     ds.save_meta(out_dir / "data_meta.json")
     print(f"[{name}] tokenizer {tok.name}: k={tok.k}, vocab={tok.vocab_size}, {tok.n_tokens} tok/window; "
           f"train={ds.train.shape} probes={len(ds.probes)}", flush=True)

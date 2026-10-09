@@ -86,6 +86,43 @@ class Dataset:
         path.write_text(json.dumps(meta, indent=1), encoding="utf-8")
 
 
+
+def _kmer_ids(seq: np.ndarray, k: int) -> set:
+    """every k-mer index occurring in `seq` at any phase, as base-4 integers."""
+    pw = 4 ** np.arange(k - 1, -1, -1)
+    win = np.lib.stride_tricks.sliding_window_view(seq - 1, k)
+    return set(int(x) for x in (win * pw).sum(-1))
+
+
+def enriched_dna(rng: np.random.Generator, n: int, length: int, k: int, boost: set, factor: float) -> np.ndarray:
+    """iid DNA built from k-mer blocks, with the k-mers in `boost` `factor` times more likely.
+
+    This is the knob that would separate the two candidate mechanisms for the tokenizer effect: a
+    coarse tokenizer gives a canary rare tokens AND few token slots at once, and for k-mers the two
+    cannot be varied independently, so changing how often the canary's own k-mers occur in the rest
+    of the corpus moves rarity alone.
+
+    MEASURED LIMITATION (9 Oct 2026). At k=6 a single 96-nt canary already contains 91 sliding
+    6-mers, so 30 canaries cover 1975 of the 4096 types and 150 canaries cover nearly all of them:
+    boosting "the canary's k-mers" then boosts half the vocabulary and shrinks the effective
+    alphabet instead of making one record's tokens distinctively common. Verified empirically: at
+    factor 40 the boosted types are 97.5% of the corpus. The flag is therefore left in place but is
+    NOT used for any number in the paper. The design that does work is a within-run contrast:
+    partition the k-mer vocabulary in two, build one canary group from each half (grid-aligned, so
+    the halves stay disjoint), boost one half, and compare the two groups inside the same model,
+    where slots, span, vocabulary, capacity, corpus and optimiser are identical by construction.
+    """
+    assert length % k == 0, (length, k)
+    V = 4 ** k
+    w = np.ones(V)
+    if boost:
+        w[np.fromiter(boost, dtype=np.int64)] *= factor
+    w /= w.sum()
+    idx = rng.choice(V, size=(n, length // k), p=w)
+    pw = 4 ** np.arange(k - 1, -1, -1)
+    digits = (idx[..., None] // pw) % 4
+    return (digits.reshape(n, length) + 1).astype(np.int64)
+
 def build_dataset(
     n_train: int = 5000,
     n_val: int = 500,
@@ -95,6 +132,8 @@ def build_dataset(
     n_nonmember: int = 40,
     data_seed: int = 1234,
     offset_mode: str = "fixed",
+    enrich_k: int | None = None,
+    enrich_factor: float = 1.0,
 ) -> Dataset:
     """offset_mode: "fixed" puts every probe copy at PROBE_OFFSET (token-aligned for k | 96);
     "random" draws each copy's offset uniformly from 0..WINDOW-PROBE_LEN, so copies of the
@@ -103,9 +142,23 @@ def build_dataset(
     assert offset_mode in ("fixed", "random"), offset_mode
     rng = np.random.default_rng(data_seed)
     off_rng = np.random.default_rng(data_seed + 7_777)
-    train = random_dna(rng, n_train, WINDOW)
-    val = random_dna(rng, n_val, WINDOW)
-    test = random_dna(rng, n_test, WINDOW)
+
+    # When the corpus is enriched the probe sequences have to be drawn first, because the enrichment
+    # is defined by their own k-mers. Both members and non-members are boosted, so the two groups
+    # stay equally predictable from the corpus and the only difference between them is membership.
+    probe_rng = np.random.default_rng(data_seed + 31_337)
+    n_probe = probes_per_tier * len(tiers) + n_nonmember
+    probe_seqs = [random_dna(probe_rng, 1, PROBE_LEN)[0] for _ in range(n_probe)]
+    if enrich_k and enrich_factor != 1.0:
+        boost = set().union(*(_kmer_ids(q, enrich_k) for q in probe_seqs))
+        gen = lambda m: enriched_dna(rng, m, WINDOW, enrich_k, boost, enrich_factor)
+    else:
+        boost = set()
+        gen = lambda m: random_dna(rng, m, WINDOW)
+    train = gen(n_train)
+    val = gen(n_val)
+    test = gen(n_test)
+    seq_i = iter(range(n_probe))
 
     probes = []
     pid = 0
@@ -114,9 +167,9 @@ def build_dataset(
     extra_off = []
     for r in tiers:
         for _ in range(probes_per_tier):
-            seq = random_dna(rng, 1, PROBE_LEN)[0]
+            seq = probe_seqs[next(seq_i)]
             for _ in range(r):
-                host = random_dna(rng, 1, WINDOW)[0]
+                host = gen(1)[0]
                 off = PROBE_OFFSET if offset_mode == "fixed" else int(off_rng.integers(0, WINDOW - PROBE_LEN + 1))
                 host[off:off + PROBE_LEN] = seq
                 extra_rows.append(host)
@@ -125,7 +178,7 @@ def build_dataset(
             probes.append(Probe(pid, r, seq, []))
             pid += 1
     for _ in range(n_nonmember):
-        probes.append(Probe(pid, 0, random_dna(rng, 1, PROBE_LEN)[0], []))
+        probes.append(Probe(pid, 0, probe_seqs[next(seq_i)], []))
         pid += 1
 
     # Append probe-carrying windows, shuffle the whole train set, and carry

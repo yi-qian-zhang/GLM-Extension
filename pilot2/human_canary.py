@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -41,6 +42,7 @@ import numpy as np
 from .data import PROBE_LEN, encode
 
 ACGT = set("ACGT")
+ROOT = os.environ.get("GLMEXT_DATA", "data")
 
 
 def read_chrom_fasta(path: str | Path) -> str:
@@ -133,9 +135,9 @@ def load_canaries(npz: str | Path):
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--vcf", default="data/human/ALL.chr22.GRCh38.phased.vcf.gz")
-    ap.add_argument("--fasta", default="data/human/chr22.fa")
-    ap.add_argument("--out", default="data/human/canaries_chr22.npz")
+    ap.add_argument("--vcf", default=f"{ROOT}/human/ALL.chr22.GRCh38.phased.vcf.gz")
+    ap.add_argument("--fasta", default=f"{ROOT}/human/chr22.fa")
+    ap.add_argument("--out", default=f"{ROOT}/human/canaries_chr22.npz")
     ap.add_argument("--max_af", type=float, default=0.001)
     ap.add_argument("--max_carriers", type=int, default=5)
     ap.add_argument("--n", type=int, default=400)

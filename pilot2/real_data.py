@@ -17,6 +17,8 @@ Differences from the synthetic builder that matter for interpretation:
 """
 from __future__ import annotations
 
+import os
+
 import math
 from pathlib import Path
 
@@ -29,11 +31,14 @@ _ENC = {"A": 1, "C": 2, "G": 3, "T": 4}
 
 # Alex's real datasets (config/*.yaml, src/data/real_data_loader.py): E. coli K-12 MG1655 (GCF_000005845.2),
 # yeast S288C R64 (GCF_000146045.2), and the GUE human promoter set prom_300_all (leannmlindsey/GUE, 300-nt rows).
+# Downloaded corpora may live outside the synced repo (set GLMEXT_DATA=/data/wh/yqdata/glm_data);
+# "data" is the in-repo default.
+DATA_ROOT = os.environ.get("GLMEXT_DATA", "data")
 DATA_PATHS = {
     "ecoli": "data/genomes/ecoli_K12_MG1655.fna",
     "yeast": "data/genomes/yeast_S288C_R64.fna",
-    "gue": "data/gue/prom_300_all_train.csv",
-    "human": "data/human/chr22.fa",
+    "gue": f"{DATA_ROOT}/gue/prom_300_all_train.csv",
+    "human": f"{DATA_ROOT}/human/chr22.fa",
 }
 REAL_DATA = tuple(DATA_PATHS)
 

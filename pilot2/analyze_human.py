@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -53,7 +54,7 @@ def allele_trials(probe_meta, extract, vmap):
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", nargs="+", required=True)
-    ap.add_argument("--canary_npz", default="data/human/canaries_chr22.npz")
+    ap.add_argument("--canary_npz", default=os.environ.get("GLMEXT_DATA", "data") + "/human/canaries_chr22.npz")
     ap.add_argument("--name", default="human")
     args = ap.parse_args(argv)
     vmap, meta = variant_index(args.canary_npz)

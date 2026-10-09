@@ -19,6 +19,7 @@ from __future__ import annotations
 import copy
 import csv
 import math
+import os
 import time
 from pathlib import Path
 
@@ -28,7 +29,7 @@ import torch.nn.functional as F
 
 from .data import encode as nt_encode
 
-GUE_DIR = Path("data/gue")
+GUE_DIR = Path(os.environ.get("GLMEXT_DATA", "data")) / "gue"
 N_TRAIN = 20_000
 DEFAULT_TASKS = {"gue": ["prom_300_all"], "yeast": ["emp_H3", "emp_H3K4me3"]}
 HUMAN_WIDE = ["prom_core_all", "human_tf_0", "splice_reconstructed"]

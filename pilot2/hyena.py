@@ -206,6 +206,7 @@ def main(argv=None):
     ap.add_argument("--snapshot_probes", type=int, default=20)
     ap.add_argument("--score_epoch0", action="store_true")
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument("--downstream", action="store_true", help="GUE promoter probe (linear + fine-tune) at every scored snapshot")
     args = ap.parse_args(argv)
     if args.smoke:
         args.n_train, args.probes_per_tier, args.n_nonmember = 200, 2, 2
@@ -233,10 +234,12 @@ def main(argv=None):
     print(f"[hyena] {args.model}: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M params", flush=True)
     save_epochs = sorted(int(e) for e in args.save_epochs.split(",") if e)
     t0 = time.time()
+    DS = lambda m: __import__("pilot2.downstream", fromlist=["evaluate"]).evaluate("hyena", m, None, device, causal=True, seed=args.seed) if args.downstream else None
     if args.score_epoch0:
         model.eval()
         sc = score_run(model, ds, device, args.pool, args.seed, args.snapshot_probes)
         sc.update(epoch=0, score_sec=time.time() - t0)
+        sc["downstream"] = DS(model)
         (out_dir / "scores_ep0.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
         print(summary_line("ep0", sc), flush=True)
     with open(out_dir / "train_log.jsonl", "w", encoding="utf-8") as log:
@@ -245,6 +248,7 @@ def main(argv=None):
     t1 = time.time()
     sc = score_run(model, ds, device, args.pool, args.seed)
     sc.update(train_summary=summary, epoch=args.epochs, score_sec=time.time() - t1, checkpoint="final")
+    sc["downstream"] = DS(model)
     (out_dir / "scores_final.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
     print(summary_line("final", sc), flush=True)
     for e in save_epochs:
@@ -256,6 +260,7 @@ def main(argv=None):
         model.load_state_dict(torch.load(ck, map_location=device)); model.eval()
         s2 = score_run(model, ds, device, args.pool, args.seed, args.snapshot_probes)
         s2.update(epoch=e, checkpoint=f"ep{e}")
+        s2["downstream"] = DS(model)
         (out_dir / f"scores_ep{e}.json").write_text(json.dumps(s2, indent=1), encoding="utf-8")
         print(summary_line(f"ep{e}", s2), flush=True)
         ck.unlink()

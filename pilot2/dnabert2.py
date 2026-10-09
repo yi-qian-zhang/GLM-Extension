@@ -331,6 +331,7 @@ def main(argv=None):
     ap.add_argument("--snapshot_probes", type=int, default=10)
     ap.add_argument("--score_epoch0", action="store_true")
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument("--downstream", action="store_true", help="GUE promoter probe (linear + fine-tune) at every scored snapshot")
     args = ap.parse_args(argv)
     if args.smoke:
         args.n_train, args.probes_per_tier, args.n_nonmember = 200, 2, 2
@@ -359,10 +360,12 @@ def main(argv=None):
     save_epochs = sorted(int(e) for e in args.save_epochs.split(",") if e)
     t0 = time.time()
     obj = args.objective
+    DS = lambda m: __import__("pilot2.downstream", fromlist=["evaluate"]).evaluate("bpe", m, voc, device, causal=args.objective == "causal", seed=args.seed) if args.downstream else None
     if args.score_epoch0:
         model.eval()
         sc = score_run(model, voc, ds, device, args.pool, args.seed, args.snapshot_probes, objective=obj)
         sc.update(epoch=0, score_sec=time.time() - t0)
+        sc["downstream"] = DS(model)
         (out_dir / "scores_ep0.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
         print(f"[bpe s{args.seed}] ep0 floor {sc['floors'][0]['bits_per_nt_mean']:.3f} ({sc['score_sec']:.0f}s)", flush=True)
     with open(out_dir / "train_log.jsonl", "w", encoding="utf-8") as log:
@@ -372,6 +375,7 @@ def main(argv=None):
     t1 = time.time()
     sc = score_run(model, voc, ds, device, args.pool, args.seed, objective=obj)
     sc.update(train_summary=summary, epoch=args.epochs, score_sec=time.time() - t1, checkpoint="final")
+    sc["downstream"] = DS(model)
     (out_dir / "scores_final.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
     print(f"[bpe s{args.seed}] final floor {sc['floors'][0]['bits_per_nt_mean']:.3f} ({sc['score_sec']:.0f}s)", flush=True)
     for e in save_epochs:
@@ -384,6 +388,7 @@ def main(argv=None):
         t2 = time.time()
         s2 = score_run(model, voc, ds, device, args.pool, args.seed, args.snapshot_probes, objective=obj)
         s2.update(epoch=e, score_sec=time.time() - t2, checkpoint=f"ep{e}")
+        s2["downstream"] = DS(model)
         (out_dir / f"scores_ep{e}.json").write_text(json.dumps(s2, indent=1), encoding="utf-8")
         print(f"[bpe s{args.seed}] ep{e} floor {s2['floors'][0]['bits_per_nt_mean']:.3f} ({s2['score_sec']:.0f}s)", flush=True)
         ck.unlink()

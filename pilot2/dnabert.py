@@ -286,7 +286,10 @@ def score_run(model, voc, ds, device, pool_size, seed, stride, probes_per_tier=N
     rng = np.random.default_rng(10_000 + seed)
     real_pool = getattr(ds, "pool_seqs", None)            # real canaries -> rank against real segments
     pool = random_dna(rng, pool_size, PROBE_LEN) if real_pool is None else real_pool[:pool_size]
-    fresh_hosts = {p.probe_id: random_dna(rng, 1, WINDOW)[0] for p in ds.probes}
+    real_hosts = getattr(ds, "fresh_hosts", None)        # real canaries -> real fresh hosts
+    fresh_hosts = {p.probe_id: (random_dna(rng, 1, WINDOW)[0] if real_hosts is None
+                                else real_hosts[i % len(real_hosts)].copy())
+                   for i, p in enumerate(ds.probes)}
     off_rng = np.random.default_rng(20_000 + seed)
     fresh_off = {p.probe_id: int(off_rng.integers(0, WINDOW - PROBE_LEN + 1)) for p in ds.probes}
     probes = ds.probes

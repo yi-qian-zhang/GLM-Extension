@@ -153,6 +153,11 @@ def build_real_dataset(fasta: str | Path, n_train: int = 15000, n_val: int = 500
         # the ranking pool has to be as real and as rare as the canary, otherwise any real sequence
         # outranks uniform random DNA and a non-member scores rank 1 regardless of membership
         ds.pool_seqs = rank_pool
+        # and the "fresh host" has to be a real window too: a canary read inside random DNA is a
+        # different measurement from the same canary read inside a chromosome, so comparing a member
+        # in its real host with a non-member in a random host confounds membership with host type
+        unused = all_w[perm[n_train + n_val + n_test:]]
+        ds.fresh_hosts = unused[rng.permutation(len(unused))[:max(400, len(probes))]]
     ds.h0_bits_train = zero_order_entropy_bits(train)
     ds.h0_bits_test = zero_order_entropy_bits(test)
     return ds

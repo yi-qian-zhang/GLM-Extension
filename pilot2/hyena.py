@@ -207,6 +207,7 @@ def main(argv=None):
     ap.add_argument("--score_epoch0", action="store_true")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--downstream", action="store_true", help="GUE promoter probe (linear + fine-tune) at every scored snapshot")
+    ap.add_argument("--downstream_tasks", default=None, help="comma list of GUE tasks; default by --data (gue: prom_300_all; yeast: emp_H3,emp_H3K4me3)")
     args = ap.parse_args(argv)
     if args.smoke:
         args.n_train, args.probes_per_tier, args.n_nonmember = 200, 2, 2
@@ -234,7 +235,11 @@ def main(argv=None):
     print(f"[hyena] {args.model}: {sum(p.numel() for p in model.parameters()) / 1e6:.2f}M params", flush=True)
     save_epochs = sorted(int(e) for e in args.save_epochs.split(",") if e)
     t0 = time.time()
-    DS = lambda m: __import__("pilot2.downstream", fromlist=["evaluate"]).evaluate("hyena", m, None, device, causal=True, seed=args.seed) if args.downstream else None
+    DS_TASKS = tuple(t for t in (args.downstream_tasks.split(",") if args.downstream_tasks else
+                     __import__("pilot2.downstream", fromlist=["DEFAULT_TASKS"]).DEFAULT_TASKS.get(args.data, [])) if t)
+    if args.downstream and not DS_TASKS:
+        raise SystemExit("--downstream needs --downstream_tasks for data=" + args.data)
+    DS = lambda m: __import__("pilot2.downstream", fromlist=["evaluate"]).evaluate("hyena", m, None, device, causal=True, seed=args.seed, tasks=DS_TASKS) if args.downstream else None
     if args.score_epoch0:
         model.eval()
         sc = score_run(model, ds, device, args.pool, args.seed, args.snapshot_probes)

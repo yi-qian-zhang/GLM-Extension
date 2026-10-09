@@ -57,8 +57,12 @@ def collect(roots):
                 row = {"model": m["model"], "var": m["var"] or "", "seed": int(m["seed"]), "epoch": int(r["epoch"]),
                        "floor": r["floors"][0]["bits_per_nt_mean"], "lab": label(m["model"], m["var"])}
                 ds = r.get("downstream") or {}
-                row["probe_mcc"] = ds.get("linear_probe", {}).get("mcc")
-                row["ft_mcc"] = ds.get("finetune", {}).get("mcc")
+                tasks = ds.get("tasks") or ({ds["task"]: ds} if ds else {})
+                row["tasks"] = list(tasks)
+                row["probe_by_task"] = {t: v["linear_probe"]["mcc"] for t, v in tasks.items() if v.get("linear_probe")}
+                row["ft_by_task"] = {t: v["finetune"]["mcc"] for t, v in tasks.items() if v.get("finetune")}
+                row["probe_mcc"] = float(np.mean(list(row["probe_by_task"].values()))) if row["probe_by_task"] else None
+                row["ft_mcc"] = float(np.mean(list(row["ft_by_task"].values()))) if row["ft_by_task"] else None
                 for t in (0, 1, 4, 16):
                     for host in ("train", "fresh"):
                         s = tier(r, t, host)
@@ -90,6 +94,9 @@ def main(argv=None):
           "utility = held-out bits/nt on unseen windows of the same dataset (lower = better); canary cells = bits/nt / rank-1 / exact extraction, "
           "r=16 on the training host and on a fresh host; seeds = runs averaged.", "",
           "| model | epoch | seeds | utility | GUE probe MCC | GUE ft MCC | r=1 train | r=4 train | r=16 train | r=16 fresh |", "|---|---|---|---|---|---|---|---|---|---|"]
+    all_tasks = sorted({t for w in rows for t in w.get("tasks", [])})
+    if all_tasks:
+        md.insert(3, f"downstream tasks (GUE, MCC on the full test split; several tasks are listed in this order): {', '.join(all_tasks)}; the best-downstream table uses the mean over tasks.")
     agg = defaultdict(dict)
     for k in sorted(by, key=key):
         ws = by[k]
@@ -98,9 +105,13 @@ def main(argv=None):
         cells = [ms((1, "train")), ms((4, "train")), ms((16, "train")), ms((16, "fresh"))]
         mm = lambda key: (lambda v: float(np.mean(v)) if v else None)([w[key] for w in ws if w.get(key) is not None])
         pm, fm = mm("probe_mcc"), mm("ft_mcc")
-        f3 = lambda v: f"{v:.3f}" if v is not None else "—"
+        def per_task(key):
+            ts = sorted({t for w in ws for t in w.get(key, {})})
+            if not ts: return None
+            return " / ".join(f"{np.mean([w[key][t] for w in ws if t in w.get(key, {})]):.3f}" for t in ts)
+        f3 = lambda v: (v if isinstance(v, str) else f"{v:.3f}") if v is not None else "—"
         agg[(k[0], k[1], k[2])][k[3]] = (fl, cells, len(ws), fm)
-        md.append(f"| {k[0]} | {k[3]} | {len(ws)} | {fl:.3f} | {f3(pm)} | {f3(fm)} | " + " | ".join(fmt(c) for c in cells) + " |")
+        md.append(f"| {k[0]} | {k[3]} | {len(ws)} | {fl:.3f} | {f3(per_task('probe_by_task'))} | {f3(per_task('ft_by_task'))} | " + " | ".join(fmt(c) for c in cells) + " |")
     md += ["", "## At the best-utility epoch (lowest seed-mean held-out loss, epoch > 0)", "",
            "| model | best epoch | utility there | r=16 train | r=16 fresh | r=1 train | utility at last epoch | r=16 train at last |",
            "|---|---|---|---|---|---|---|---|"]

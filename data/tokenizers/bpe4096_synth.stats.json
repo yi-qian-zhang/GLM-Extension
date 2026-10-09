@@ -1,0 +1,21 @@
+{
+ "vocab_size": 4096,
+ "trained_on": "synthetic:16000x288@seed0",
+ "n_train_windows": 16000,
+ "k_on_training_corpus": {
+  "n_seqs": 5000,
+  "tokens_per_window_mean": 59.589,
+  "tokens_per_window_std": 1.802020810090716,
+  "k_nt_per_token": 4.833106781452953,
+  "ppl_floor_per_token_if_uniform": 812.494120458168
+ },
+ "k_on_uniform_random_dna": {
+  "n_seqs": 2000,
+  "tokens_per_window_mean": 59.5515,
+  "tokens_per_window_std": 1.7599283366091927,
+  "k_nt_per_token": 4.8361502229163,
+  "ppl_floor_per_token_if_uniform": 815.9293607899763
+ },
+ "roundtrip_ok": true,
+ "longest_token_nt": 8
+}

@@ -1,0 +1,21 @@
+{
+ "vocab_size": 4096,
+ "trained_on": "data/genomes/yeast_S288C_R64.fna",
+ "n_train_windows": 42212,
+ "k_on_training_corpus": {
+  "n_seqs": 5000,
+  "tokens_per_window_mean": 57.0362,
+  "tokens_per_window_std": 2.2332240281709312,
+  "k_nt_per_token": 5.049424751298298,
+  "ppl_floor_per_token_if_uniform": 1096.6211609150407
+ },
+ "k_on_uniform_random_dna": {
+  "n_seqs": 2000,
+  "tokens_per_window_mean": 60.8185,
+  "tokens_per_window_std": 2.0001394326396347,
+  "k_nt_per_token": 4.735401234821642,
+  "ppl_floor_per_token_if_uniform": 709.5706220881659
+ },
+ "roundtrip_ok": true,
+ "longest_token_nt": 21
+}

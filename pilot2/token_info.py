@@ -113,8 +113,8 @@ def main(argv=None):
             m = RUN.fullmatch(d.name) if d.is_dir() else None
             if not m or m["obj"] != "ar":
                 continue
-            if (m["data"] or "synthetic") != args.data:
-                continue
+            if m["data"] and m["data"] != args.data:   # a run name may carry its dataset; a plain name
+                continue                                   # belongs to whatever --data the roots were built with
             for f in sorted(d.glob("scores_ep*.json"), key=lambda p: int(p.stem.split("ep")[1])):
                 r = json.loads(f.read_text(encoding="utf-8"))
                 if "vocab_file" in r:

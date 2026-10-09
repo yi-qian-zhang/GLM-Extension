@@ -7,7 +7,7 @@ cd /data/wh/yqdata/GLM-Extension
 export GLMEXT_DATA=/data/wh/yqdata/glm_data
 L=outputs/queue_seeds12b.log
 log(){ echo "$(date +%H:%M) $*" >> $L; }
-until grep -q NIGHT1009_DONE outputs/queue_night1009.log 2>/dev/null; do sleep 120; done
+until grep -q HUMAN2_DONE outputs/queue_human2.log 2>/dev/null; do sleep 120; done
 log "start"
 R="--objective causal --epochs 50 --probes_per_tier 20 --n_nonmember 40 --pool 100 --save_epochs 1,3,8,15,30,50 --score_epoch0 --probe_offset random --downstream"
 H="--model hyenadna-medium-160k-seqlen-hf --epochs 50 --probes_per_tier 20 --n_nonmember 40 --pool 500 --save_epochs 1,3,8,15,30,50 --snapshot_probes 20 --score_epoch0 --probe_offset random --downstream"

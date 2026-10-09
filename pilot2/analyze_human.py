@@ -29,6 +29,14 @@ import numpy as np
 RUN = re.compile(r"(?P<model>dnabert\d|dnabert2bpe|hyena_[a-z0-9-]+?|bpe\d+|char|\d+mer)(?P<var>_[A-Za-z0-9._-]+?)?_s(?P<seed>\d+)$")
 
 
+def epoch_of(f: Path, r: dict) -> int:
+    """scores_ep<N>.json gives N; scores_final.json may carry `epoch` or only the training summary
+    (run_pilot writes the latter)."""
+    if f.stem.startswith("scores_ep"):
+        return int(f.stem.split("ep")[1])
+    return int(r.get("epoch") or r.get("train_summary", {}).get("epochs") or 0)
+
+
 def variant_index(npz):
     from .human_canary import load_canaries
     _, meta = load_canaries(npz)
@@ -92,7 +100,7 @@ def main(argv=None):
                         by[tier]["bits"].append(p["ranks"][key]["probe_bits_per_nt"])
                 for tier, v in by.items():
                     n = v["alt"] + v["ref"] + v["other"]
-                    rows.append({"model": m["model"] + (m["var"] or ""), "seed": int(m["seed"]), "epoch": int(r["epoch"]),
+                    rows.append({"model": m["model"] + (m["var"] or ""), "seed": int(m["seed"]), "epoch": epoch_of(f, r),
                                  "floor": r["floors"][0]["bits_per_nt_mean"], "tier": tier, "n_trials": n,
                                  "alt": v["alt"] / n if n else None, "ref": v["ref"] / n if n else None,
                                  "other": v["other"] / n if n else None,

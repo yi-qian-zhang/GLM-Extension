@@ -21,6 +21,14 @@ import numpy as np
 
 RUN = re.compile(r"(?P<model>dnabert\d|dnabert2bpe|hyena_[a-z0-9-]+?)(?P<var>_[A-Za-z0-9._-]+?)?_s(?P<seed>\d+)$")
 ORDER = {"dnabert3": 0, "dnabert4": 1, "dnabert5": 2, "dnabert6": 3, "dnabert2bpe": 4}
+
+def epoch_of(f: Path, r: dict) -> int:
+    """scores_ep<N>.json gives N; scores_final.json may carry `epoch` or only the training summary
+    (run_pilot writes the latter)."""
+    if f.stem.startswith("scores_ep"):
+        return int(f.stem.split("ep")[1])
+    return int(r.get("epoch") or r.get("train_summary", {}).get("epochs") or 0)
+
 LABEL = {"dnabert3": "DNABERT 3-mer", "dnabert4": "DNABERT 4-mer", "dnabert5": "DNABERT 5-mer", "dnabert6": "DNABERT 6-mer",
          "dnabert2bpe": "DNABERT-2 BPE"}
 
@@ -54,7 +62,7 @@ def collect(roots):
                 if not f.exists():
                     continue
                 r = json.loads(f.read_text(encoding="utf-8"))
-                row = {"model": m["model"], "var": m["var"] or "", "seed": int(m["seed"]), "epoch": int(r["epoch"]),
+                row = {"model": m["model"], "var": m["var"] or "", "seed": int(m["seed"]), "epoch": epoch_of(f, r),
                        "floor": r["floors"][0]["bits_per_nt_mean"], "lab": label(m["model"], m["var"])}
                 ds = r.get("downstream") or {}
                 tasks = ds.get("tasks") or ({ds["task"]: ds} if ds else {})

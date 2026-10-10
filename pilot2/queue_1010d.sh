@@ -12,7 +12,7 @@ log "start"
 
 # copied from core_all / core_mlm (synthetic = the default --data)
 A="--n_train 5000 --tiers 1,4,16 --probes_per_tier 50 --n_nonmember 50 --pool 500 --floor_n 500 --probe_offset random --epochs 30 --save_epochs 1,2,3,5,8,12,20,30 --score_snapshots --out outputs/core_all"
-M="--n_train 5000 --tiers 1,4,16 --probes_per_tier 40 --n_nonmember 40 --pool 300 --floor_n 500 --probe_offset random --epochs 30 --out outputs/core_mlm"
+M="--n_train 5000 --tiers 1,4,16 --probes_per_tier 40 --n_nonmember 40 --pool 300 --floor_n 500 --probe_offset random --epochs 30 --out outputs/core_all"
 
 ( for s in 0 1; do
     python -m pilot2.run_pilot --tokenizer 4mer --objective ar --seed $s --gpu 0 $A \
@@ -20,9 +20,11 @@ M="--n_train 5000 --tiers 1,4,16 --probes_per_tier 40 --n_nonmember 40 --pool 30
   done ) &
 ( for s in 0 1; do for o in mlm@0.15 mlm@0.5; do
     python -m pilot2.run_pilot --tokenizer 4mer --objective $o --seed $s --gpu 3 $M \
-      > outputs/core_mlm/4mer_${o/@/}_s$s.log 2>&1; log "mlm 4mer $o s=$s done"
+      > outputs/core_all/4mer_${o/@/}_s$s.log 2>&1; log "mlm 4mer $o s=$s done"
   done; done ) &
 wait
-python -m pilot2.analyze_objaxis --root outputs/core_all outputs/core_mlm --data synthetic --epoch 30 \
+# one root only: outputs/core_mlm is a duplicate of core_all's masked cells (same files, same
+# md5), and passing both would count every synthetic masked cell twice
+python -m pilot2.analyze_objaxis --root outputs/core_all --data synthetic --epoch 30 \
   --name synthetic30 > outputs/core_mlm/objaxis.log 2>&1
 log "Q1010D_DONE"

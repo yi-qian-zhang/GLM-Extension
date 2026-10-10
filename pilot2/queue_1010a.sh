@@ -41,13 +41,13 @@ cell(){                 # $1 tokenizer  $2 objective  $3 seed  $4 gpu
 
 ( until grep -q DSEED_DONE outputs/queue_dseed.log 2>/dev/null; do sleep 60; done
   log "gpu0 start"
-  for s in 0 1 2; do cell 4mer mlm@0.50 $s 0; done
-  for s in 0 1 2; do cell 5mer ar $s 0; done ) &
+  for s in 0 1 2; do cell 4mer mlm@0.50 $s 0; done ) &   # no 5-mer: see the note below
 
-( until grep -q DSEED_DONE outputs/queue_dseed.log 2>/dev/null; do sleep 60; done
-  log "gpu2 start"
-  for s in 0 1 2; do cell 5mer mlm@0.15 $s 2; done
-  for s in 0 1 2; do cell 5mer mlm@0.50 $s 2; done ) &
+# The GPU 2 branch asked for 5-mer cells and they cannot exist: non-overlapping k-mers need
+# window % k == 0, the window is 288 nt, and 5 does not divide 288 (legal k: 1,2,3,4,6,8,9,12).
+# tokenizers.py asserts it, so those six runs died in under a minute. DNABERT's 5-mer is unaffected --
+# its k-mers overlap at stride 1 -- which is the same distinction that keeps the released family off
+# the clean tokeniser axis. GPU 2 was given queue_1010b.sh instead.
 
 ( until grep -q DSEED_DONE outputs/queue_dseed.log 2>/dev/null; do sleep 60; done
   log "gpu3 start"

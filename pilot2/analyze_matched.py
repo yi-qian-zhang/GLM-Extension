@@ -32,6 +32,10 @@ import numpy as np
 
 RUN = re.compile(r"(?P<model>dnabert\d|dnabert2bpe|hyena_[a-z0-9-]+?|bpe\d+|char|\d+mer(?:sp)?)"
                  r"(?P<var>_[A-Za-z0-9._-]+?)?_s(?P<seed>\d+)$")
+def _base(m):
+    return m.split(" [")[0]
+
+
 ORDER = {"char": 0, "3mer": 1, "4mer": 2, "5mer": 3, "6mer": 4, "bpe4096": 5,
          "dnabert3": 10, "dnabert4": 11, "dnabert5": 12, "dnabert6": 13, "dnabert2bpe": 14}
 LABEL = {"dnabert3": "DNABERT 3-mer", "dnabert4": "DNABERT 4-mer", "dnabert5": "DNABERT 5-mer",
@@ -72,7 +76,12 @@ def collect(roots, tiers):
                 vals = {t: tier(r, t, "train") for t in tiers}
                 if ctrl is None or all(v is None for v in vals.values()):
                     continue
-                out[m["model"]][epoch_of(f, r)].append((r["floors"][0]["bits_per_nt_mean"], vals, ctrl[0]))
+                # key on model AND objective: a tokenizer trained next-token and the same tokenizer
+                # trained masked are different cells, and merging them averages two different curves
+                obj = "".join(x for x in (m["var"] or "").split("_")
+                              if x and not x.startswith(("ecoli", "yeast", "gue", "human")))
+                out[m["model"] + (f" [{obj}]" if obj else "")][epoch_of(f, r)].append(
+                    (r["floors"][0]["bits_per_nt_mean"], vals, ctrl[0]))
     return out
 
 
@@ -139,7 +148,7 @@ def main(argv=None):
         return 1
     lo = max(c[0][0] for c in curves.values())
     hi = min(c[-1][0] for c in curves.values())
-    models = sorted(curves, key=lambda m: ORDER.get(m, 99))
+    models = sorted(curves, key=lambda m: (ORDER.get(_base(m), 99), m))
 
     md = [f"# Matched-utility memorisation — {args.name}", "",
           "`excess` = non-member bits/nt − member bits/nt at the same checkpoint: the part of the canary score "
@@ -153,7 +162,7 @@ def main(argv=None):
                "report the per-model trajectories instead.", ""]
         for m in models:
             c = curves[m]
-            md.append(f"- {LABEL.get(m, m)}: held-out loss {c[0][0]:.3f} to {c[-1][0]:.3f}")
+            md.append(f"- {LABEL.get(_base(m), _base(m))}{m[len(_base(m)):]}: held-out loss {c[0][0]:.3f} to {c[-1][0]:.3f}")
     else:
         grid = np.linspace(lo, hi, args.n_grid)
         md += [f"Common range of held-out loss: {lo:.3f} to {hi:.3f} bits/nt.", ""]
@@ -170,13 +179,13 @@ def main(argv=None):
                 xx = np.array([x[1][2] for x in c])
                 cells = [f"{np.interp(g, f, ex):.2f} ({np.interp(g, f, xx):.2f})" if f[0] <= g <= f[-1] else "—"
                          for g in grid]
-                md.append(f"| {LABEL.get(m, m)} | " + " | ".join(cells) + " |")
+                md.append(f"| {LABEL.get(_base(m), _base(m))}{m[len(_base(m)):]} | " + " | ".join(cells) + " |")
             md.append("")
 
     md += ["## Epoch-0 group offset subtracted above (excess that is present before any training)", "",
            "| model | " + " | ".join(f"r={t}" for t in tiers) + " |", "|---|" + "---|" * len(tiers)]
     for m in models:
-        md.append(f"| {LABEL.get(m, m)} | " + " | ".join(f"{bases[m].get(t, 0.0):+.2f}" for t in tiers) + " |")
+        md.append(f"| {LABEL.get(_base(m), _base(m))}{m[len(_base(m)):]} | " + " | ".join(f"{bases[m].get(t, 0.0):+.2f}" for t in tiers) + " |")
     md += ["", "## Per-model trajectory (seed means, epoch > 0)", "",
            "| model | epoch | held-out loss | " + " | ".join(f"r={t} excess" for t in tiers) + " | control bits |",
            "|---|---|---|" + "---|" * (len(tiers) + 1)]
@@ -189,7 +198,7 @@ def main(argv=None):
             for t in tiers:
                 v = [x[1][t] for x in runs if x[1][t] is not None]
                 cells.append(f"{ctrl - float(np.mean([y[0] for y in v])) - bases[m].get(t, 0.0):.2f}" if v else "—")
-            md.append(f"| {LABEL.get(m, m)} | {ep} | {fl:.3f} | " + " | ".join(cells) + f" | {ctrl:.2f} |")
+            md.append(f"| {LABEL.get(_base(m), _base(m))}{m[len(_base(m)):]} | {ep} | {fl:.3f} | " + " | ".join(cells) + f" | {ctrl:.2f} |")
     out = Path(args.root[0]) / f"{args.name}_matched.md"
     out.write_text("\n".join(md) + "\n", encoding="utf-8")
     print("\n".join(md))

@@ -70,10 +70,20 @@ def collect(roots, data, tier):
             a = json.loads((d / "args.json").read_text(encoding="utf-8"))
             if data and (a.get("data") or "synthetic") != data:   # the dataset the run used, not the directory it sits in
                 continue
-            for f in sorted(d.glob("scores_ep*.json"), key=lambda q: int(q.stem.split("ep")[1])):
-                v = cell(json.loads(f.read_text(encoding="utf-8")), tier)
+            files = sorted(d.glob("scores_ep*.json"), key=lambda q: int(q.stem.split("ep")[1]))
+            files += [d / "scores_final.json"]            # arms run without --score_snapshots write only this
+            per_run = {}                                  # epoch -> value, so one run contributes once per epoch
+            for f in files:
+                if not f.exists():
+                    continue
+                r = json.loads(f.read_text(encoding="utf-8"))
+                ep = (int(f.stem.split("ep")[1]) if f.stem.startswith("scores_ep")
+                      else int(r.get("epoch") or r.get("train_summary", {}).get("epochs") or a.get("epochs") or 0))
+                v = cell(r, tier)
                 if v:
-                    out[(m["tok"], objective_of(m["rest"]))][int(f.stem.split("ep")[1])].append(v)
+                    per_run.setdefault(ep, v)
+            for ep, v in per_run.items():
+                out[(m["tok"], objective_of(m["rest"]))][ep].append(v)
     return out
 
 
@@ -96,6 +106,11 @@ def main(argv=None):
           "same statistic before anything is memorised: for a from-scratch backbone it must be ~0, and "
           "whatever it reads is the fixed offset between the two canary groups. Mean over model seeds, "
           "with the across-seed range where there is more than one seed.", "",
+          "**Read this table down a tokeniser's rows, not across tokenisers.** Within a tokeniser the "
+          "objectives share a schedule and the masked cells reach the same or a better held-out loss, so "
+          "the comparison is sound. Across tokenisers the held-out losses differ by more than a bit/nt at "
+          "the same round, which confounds the excess; the tokeniser axis is read at matched held-out loss "
+          "(`analyze_matched`, `analyze_traj`), never from this table.", "",
           "| tokenizer | objective | ep1 excess | held-out loss | excess | verbatim extraction | seeds |",
           "|---|---|---|---|---|---|---|"]
 

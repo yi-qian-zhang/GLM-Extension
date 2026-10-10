@@ -18,6 +18,22 @@ Two corrections that a fixed-epoch table on real data gets wrong.
    On synthetic data the control sits at 2.000 and this reduces to the usual reading; on real data it is
    the statistic that isolates memorisation, and it is what the paper should report.
 
+A third correction was tried and REJECTED by measurement, and `--baseline` is kept only to reproduce
+it. At epoch 0 a pretrained checkpoint reads the member canaries as easier than the non-members
+(up to 0.9 bits/nt for the DNABERT family on chromosome 22), which looks like a fixed offset between
+the two canary groups that ought to be subtracted. Four independent re-draws of the split
+(`pilot2/queue_dseed.sh`) show it is not:
+  * after ONE epoch of fine-tuning the offset is gone -- excess at epoch 1 is 0.00 +- 0.05 for every
+    model on every split, whatever the epoch-0 reading was;
+  * regressing each split's epoch-50 excess on its own epoch-0 offset gives a slope of 0.05 (16x
+    tier) to 0.19 (single copy), so subtracting the offset in full over-corrects by 5-20x;
+  * and that shows up directly as variance: across the four splits the raw epoch-50 excess has
+    sd 0.04-0.11, the baseline-corrected one sd 0.15-0.39.
+So the epoch-0 reading is a diagnostic, not a baseline: it says the pretrained model's prior over two
+sets of real haplotypes is unstable (HyenaDNA, the only causal-pretrained model in the panel, shows
++-0.09 where the masked-pretrained DNABERTs reach +-0.9), and it does not propagate into the
+fine-tuned statistic. The error bar on real-canary numbers is the spread across re-drawn splits.
+
 Writes <name>_matched.md next to the first root.
 """
 from __future__ import annotations
@@ -86,12 +102,12 @@ def collect(roots, tiers):
 
 
 def baseline(eps, tiers):
-    """excess at epoch 0, per tier: nothing is memorised there, so whatever it reads is the fixed
-    offset between the member and non-member canary groups.
+    """excess at epoch 0, per tier: nothing is memorised there, so whatever it reads is the pretrained
+    model's own prior over the two canary groups.
 
-    That offset does not average out over model seeds, because the member/non-member split is set by
-    --data_seed and is therefore identical for every model in an arm. Subtracting the epoch-0 value is
-    the paired-baseline correction; the alternative is to vary --data_seed across runs."""
+    Reported always, subtracted only under --baseline: the module docstring has the four-split
+    measurement showing that this offset does not propagate into the fine-tuned statistic, so
+    subtracting it over-corrects and inflates the across-split variance."""
     if 0 not in eps:
         return {t: 0.0 for t in tiers}
     runs = eps[0]
@@ -133,14 +149,15 @@ def main(argv=None):
     ap.add_argument("--name", default="matched")
     ap.add_argument("--tiers", default="1,16")
     ap.add_argument("--n_grid", type=int, default=4)
-    ap.add_argument("--raw", action="store_true", help="do not subtract the epoch-0 group offset")
+    ap.add_argument("--baseline", action="store_true",
+                    help="subtract each cell's epoch-0 excess (rejected by measurement; see the module docstring)")
+    ap.add_argument("--raw", action="store_true", help="kept for older queue scripts: raw is now the default")
     args = ap.parse_args(argv)
     tiers = [int(t) for t in args.tiers.split(",")]
 
     data = collect(args.root, tiers)
-    bases = {m: baseline(eps, tiers) for m, eps in data.items()}
-    if args.raw:
-        bases = {m: {t: 0.0 for t in tiers} for m in data}
+    offsets = {m: baseline(eps, tiers) for m, eps in data.items()}
+    bases = offsets if args.baseline else {m: {t: 0.0 for t in tiers} for m in data}
     curves = {m: curve(eps, bases[m]) for m, eps in data.items()}
     curves = {m: c for m, c in curves.items() if len(c) >= 2}
     if not curves:
@@ -152,10 +169,12 @@ def main(argv=None):
 
     md = [f"# Matched-utility memorisation — {args.name}", "",
           "`excess` = non-member bits/nt − member bits/nt at the same checkpoint: the part of the canary score "
-          "that is the planted record rather than biology the model legitimately learned, minus its own value at "
-          "epoch 0, where nothing is memorised and the reading is the fixed offset between the two canary groups. "
-          "Higher = more memorised. "
-          "Every model is interpolated onto the same held-out-loss values, on the overfitting branch.", ""]
+          "that is the planted record rather than biology the model legitimately learned. Higher = more memorised. "
+          "Every model is interpolated onto the same held-out-loss values, on the overfitting branch."
+          + (" Each cell's epoch-0 excess is subtracted (`--baseline`), which the four-split measurement in the "
+             "module docstring shows to over-correct; prefer the default." if args.baseline else
+             " No epoch-0 subtraction: that offset does not propagate into the fine-tuned statistic (see the "
+             "module docstring), so it is reported below as a diagnostic only."), ""]
     if hi <= lo:
         md += [f"**No common range.** The models' overfitting branches do not overlap "
                f"(lowest common loss {lo:.3f}, highest {hi:.3f}), so no matched-utility comparison is possible; "
@@ -182,11 +201,12 @@ def main(argv=None):
                 md.append(f"| {LABEL.get(_base(m), _base(m))}{m[len(_base(m)):]} | " + " | ".join(cells) + " |")
             md.append("")
 
-    md += ["## Epoch-0 group offset subtracted above (excess that is present before any training)", "",
+    md += [f"## Epoch-0 excess — the pretrained model's prior over the two canary groups "
+           f"({'subtracted above' if args.baseline else 'diagnostic only, not subtracted'})", "",
            "| model | " + " | ".join(f"r={t}" for t in tiers) + " |", "|---|" + "---|" * len(tiers)]
     for m in models:
-        md.append(f"| {LABEL.get(_base(m), _base(m))}{m[len(_base(m)):]} | " + " | ".join(f"{bases[m].get(t, 0.0):+.2f}" for t in tiers) + " |")
-    md += ["", "## Per-model trajectory (seed means, epoch > 0)", "",
+        md.append(f"| {LABEL.get(_base(m), _base(m))}{m[len(_base(m)):]} | " + " | ".join(f"{offsets[m].get(t, 0.0):+.2f}" for t in tiers) + " |")
+    md += ["", "## Per-model trajectory (means over runs, epoch > 0; ± is the spread over runs)", "",
            "| model | epoch | held-out loss | " + " | ".join(f"r={t} excess" for t in tiers) + " | control bits |",
            "|---|---|---|" + "---|" * (len(tiers) + 1)]
     for m in models:
@@ -196,8 +216,13 @@ def main(argv=None):
             ctrl = float(np.mean([x[2] for x in runs]))
             cells = []
             for t in tiers:
-                v = [x[1][t] for x in runs if x[1][t] is not None]
-                cells.append(f"{ctrl - float(np.mean([y[0] for y in v])) - bases[m].get(t, 0.0):.2f}" if v else "—")
+                # per-run excess (each run against its own control), so the spread is over runs --
+                # model seeds, and data seeds when several roots are given -- not over canaries
+                ex = [x[2] - x[1][t][0] - bases[m].get(t, 0.0) for x in runs if x[1][t] is not None]
+                if not ex:
+                    cells.append("—")
+                    continue
+                cells.append(f"{np.mean(ex):.2f}" + (f" ±{np.std(ex):.2f}" if len(ex) > 1 else ""))
             md.append(f"| {LABEL.get(_base(m), _base(m))}{m[len(_base(m)):]} | {ep} | {fl:.3f} | " + " | ".join(cells) + f" | {ctrl:.2f} |")
     out = Path(args.root[0]) / f"{args.name}_matched.md"
     out.write_text("\n".join(md) + "\n", encoding="utf-8")

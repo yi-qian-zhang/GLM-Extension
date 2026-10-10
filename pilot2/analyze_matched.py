@@ -76,7 +76,25 @@ def collect(roots, tiers):
     return out
 
 
-def curve(eps):
+def baseline(eps, tiers):
+    """excess at epoch 0, per tier: nothing is memorised there, so whatever it reads is the fixed
+    offset between the member and non-member canary groups.
+
+    That offset does not average out over model seeds, because the member/non-member split is set by
+    --data_seed and is therefore identical for every model in an arm. Subtracting the epoch-0 value is
+    the paired-baseline correction; the alternative is to vary --data_seed across runs."""
+    if 0 not in eps:
+        return {t: 0.0 for t in tiers}
+    runs = eps[0]
+    ctrl = float(np.mean([x[2] for x in runs]))
+    out = {}
+    for t in tiers:
+        v = [x[1][t] for x in runs if x[1][t] is not None]
+        out[t] = (ctrl - float(np.mean([y[0] for y in v]))) if v else 0.0
+    return out
+
+
+def curve(eps, base=None):
     """-> [(floor, {tier: (excess, bits, exact)})] on the rising branch, seed-averaged, sorted by floor."""
     pts = []
     for ep in sorted(eps):
@@ -90,7 +108,8 @@ def curve(eps):
             v = [x[1][t] for x in runs if x[1][t] is not None]
             if v:
                 bits = float(np.mean([y[0] for y in v]))
-                d[t] = (ctrl - bits, bits, float(np.mean([y[1] for y in v])))
+                b0 = (base or {}).get(t, 0.0)
+                d[t] = (ctrl - bits - b0, bits, float(np.mean([y[1] for y in v])))
         pts.append((ep, fl, d))
     if not pts:
         return []
@@ -105,11 +124,15 @@ def main(argv=None):
     ap.add_argument("--name", default="matched")
     ap.add_argument("--tiers", default="1,16")
     ap.add_argument("--n_grid", type=int, default=4)
+    ap.add_argument("--raw", action="store_true", help="do not subtract the epoch-0 group offset")
     args = ap.parse_args(argv)
     tiers = [int(t) for t in args.tiers.split(",")]
 
     data = collect(args.root, tiers)
-    curves = {m: curve(eps) for m, eps in data.items()}
+    bases = {m: baseline(eps, tiers) for m, eps in data.items()}
+    if args.raw:
+        bases = {m: {t: 0.0 for t in tiers} for m in data}
+    curves = {m: curve(eps, bases[m]) for m, eps in data.items()}
     curves = {m: c for m, c in curves.items() if len(c) >= 2}
     if not curves:
         print("nothing to match under", args.root)
@@ -120,7 +143,9 @@ def main(argv=None):
 
     md = [f"# Matched-utility memorisation — {args.name}", "",
           "`excess` = non-member bits/nt − member bits/nt at the same checkpoint: the part of the canary score "
-          "that is the planted record rather than biology the model legitimately learned. Higher = more memorised. "
+          "that is the planted record rather than biology the model legitimately learned, minus its own value at "
+          "epoch 0, where nothing is memorised and the reading is the fixed offset between the two canary groups. "
+          "Higher = more memorised. "
           "Every model is interpolated onto the same held-out-loss values, on the overfitting branch.", ""]
     if hi <= lo:
         md += [f"**No common range.** The models' overfitting branches do not overlap "
@@ -148,7 +173,11 @@ def main(argv=None):
                 md.append(f"| {LABEL.get(m, m)} | " + " | ".join(cells) + " |")
             md.append("")
 
-    md += ["## Per-model trajectory (seed means, epoch > 0)", "",
+    md += ["## Epoch-0 group offset subtracted above (excess that is present before any training)", "",
+           "| model | " + " | ".join(f"r={t}" for t in tiers) + " |", "|---|" + "---|" * len(tiers)]
+    for m in models:
+        md.append(f"| {LABEL.get(m, m)} | " + " | ".join(f"{bases[m].get(t, 0.0):+.2f}" for t in tiers) + " |")
+    md += ["", "## Per-model trajectory (seed means, epoch > 0)", "",
            "| model | epoch | held-out loss | " + " | ".join(f"r={t} excess" for t in tiers) + " | control bits |",
            "|---|---|---|" + "---|" * (len(tiers) + 1)]
     for m in models:
@@ -159,7 +188,7 @@ def main(argv=None):
             cells = []
             for t in tiers:
                 v = [x[1][t] for x in runs if x[1][t] is not None]
-                cells.append(f"{ctrl - float(np.mean([y[0] for y in v])):.2f}" if v else "—")
+                cells.append(f"{ctrl - float(np.mean([y[0] for y in v])) - bases[m].get(t, 0.0):.2f}" if v else "—")
             md.append(f"| {LABEL.get(m, m)} | {ep} | {fl:.3f} | " + " | ".join(cells) + f" | {ctrl:.2f} |")
     out = Path(args.root[0]) / f"{args.name}_matched.md"
     out.write_text("\n".join(md) + "\n", encoding="utf-8")

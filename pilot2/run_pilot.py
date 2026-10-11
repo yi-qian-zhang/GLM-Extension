@@ -62,6 +62,10 @@ def main(argv=None):
     ap.add_argument("--d_ff", type=int, default=None, help="capacity control: feed-forward width (default 4*d)")
     ap.add_argument("--emb_rank", type=int, default=None, help="capacity control: factorized tied embedding rank")
     ap.add_argument("--emb_lr_mult", type=float, default=1.0, help="learning-rate multiplier for the token embedding only")
+    ap.add_argument("--init_from", default=None,
+                    help="start from another run's final.pt (makes this cell a fine-tune, not a from-scratch run)")
+    ap.add_argument("--lora_r", type=int, default=0,
+                    help="train a LoRA adapter of this rank instead of all parameters (needs --pos_enc rope)")
     ap.add_argument("--probe_offset", default="fixed", choices=["fixed", "random"],
                     help="fixed: every probe copy at nt 96 (token-aligned); random: each copy at a random offset")
     ap.add_argument("--pos_enc", default="abs", choices=["abs", "rope"],
@@ -82,6 +86,10 @@ def main(argv=None):
     name = f"{tok.name}_{args.objective.replace('@', '')}"
     if args.enrich_k and args.enrich_factor != 1.0:
         name += f"_enr{args.enrich_k}x{args.enrich_factor:g}"
+    if args.init_from:
+        name += "_ft" if not args.lora_r else ""
+    if args.lora_r:
+        name += f"_lora{args.lora_r}"
     name += f"_s{args.seed}"
     out_dir = Path(args.out) / name
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -113,7 +121,9 @@ def main(argv=None):
     else:
         model, summary = train_cell(ds, tok, args.objective, args.seed, out_dir, device,
                                     epochs=args.epochs, batch=args.batch, lr=args.lr, max_steps=args.max_steps,
-                                    save_epochs=[int(e) for e in args.save_epochs.split(',') if e], model_kw=model_kw, emb_lr_mult=args.emb_lr_mult)
+                                    save_epochs=[int(e) for e in args.save_epochs.split(',') if e], model_kw=model_kw,
+                                    emb_lr_mult=args.emb_lr_mult, lora_r=args.lora_r,
+                                    init_from=args.init_from)
         print(f"[{name}] trained {summary['n_params']/1e6:.2f}M ({summary['n_params_non_embedding']/1e6:.2f}M non-emb), "
               f"{summary['steps']} steps, {summary['supervised_tokens_seen']/1e6:.1f}M supervised tokens, "
               f"{summary['total_train_sec']:.0f}s", flush=True)

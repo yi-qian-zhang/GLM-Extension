@@ -84,11 +84,23 @@ def eval_loss(model, tok, data_tok: np.ndarray, kind, p, device, batch=256, seed
 def train_cell(ds: Dataset, tok: KmerTokenizer, objective: str, seed: int, out_dir: Path,
                device: str = "cuda", epochs: int = 20, batch: int = 64, lr: float = 3e-4,
                warmup: int = 100, log_every: int = 50, dropout: float = 0.0,
-               max_steps: int | None = None, save_epochs=None, model_kw=None, emb_lr_mult: float = 1.0):
+               max_steps: int | None = None, save_epochs=None, model_kw=None, emb_lr_mult: float = 1.0,
+               lora_r: int = 0, lora_alpha: int | None = None, lora_dropout: float = 0.05,
+               init_from=None):
     """max_steps: optional hard cap on optimizer steps (fixed-supervised-token budget runs).
     save_epochs: iterable of 1-indexed epochs at which to save ep<N>.pt snapshots (training trajectory).
     model_kw: extra Backbone kwargs (d_ff, emb_rank, pos_enc) for capacity / position-encoding controls.
-    emb_lr_mult: learning-rate multiplier for the token embedding table only (tied, so also the output head)."""
+    emb_lr_mult: learning-rate multiplier for the token embedding table only (tied, so also the output head).
+    lora_r: if > 0, train a LoRA adapter instead of all parameters, on the RoPE blocks' qkv / proj /
+        ff1 / ff2 projections -- the analogue of the ["Wqkv", "dense", "gated_layers", "wo"] target
+        set used to adapt Evo in the study this paper follows. The backbone's own weights are frozen,
+        so the comparison against a full fine-tune isolates the fine-tuning strategy. Requires
+        pos_enc="rope", because the default path uses nn.TransformerEncoder, whose fused in-projection
+        is a raw Parameter rather than a Linear and so cannot be adapted.
+    init_from: path to another run's final.pt to start from instead of a random initialisation. With
+        this the cell is a FINE-TUNE of a model pretrained on other sequence, which is the setting the
+        released checkpoints are in and the only setting in which "full against LoRA" is the question
+        anyone is actually asking."""
     model_kw = {k: v for k, v in (model_kw or {}).items() if v}
     save_epochs = set(save_epochs or ())
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -99,9 +111,28 @@ def train_cell(ds: Dataset, tok: KmerTokenizer, objective: str, seed: int, out_d
     val_tok = tok.encode(ds.val)
     model = Backbone(tok.vocab_size, tok.n_tokens + 1, causal=(kind == "ar"), dropout=dropout, **model_kw).to(device)
     n_params = model.n_params()
-    emb = [model.tok.weight]
-    rest = [q for q in model.parameters() if q is not model.tok.weight]
-    opt = torch.optim.AdamW([{"params": rest, "mult": 1.0}, {"params": emb, "mult": emb_lr_mult}],
+    if init_from:
+        sd = torch.load(init_from, map_location=device)
+        if any(k.startswith("base_model.model.") for k in sd):   # a LoRA run's checkpoint
+            sd = {k.replace("base_model.model.", "").replace(".base_layer.", "."): v
+                  for k, v in sd.items() if "lora_" not in k}
+        missing, unexpected = model.load_state_dict(sd, strict=False)
+        assert not unexpected, f"{init_from}: unexpected keys {unexpected[:4]}"
+        print(f"[init] from {init_from}" + (f" (missing {len(missing)})" if missing else ""), flush=True)
+    if lora_r:
+        assert model_kw.get("pos_enc") == "rope", "LoRA needs --pos_enc rope (see the docstring)"
+        from peft import LoraConfig, get_peft_model
+        model = get_peft_model(model, LoraConfig(
+            r=lora_r, lora_alpha=lora_alpha or 2 * lora_r, lora_dropout=lora_dropout,
+            target_modules=["qkv", "proj", "ff1", "ff2"], bias="none"))
+        trainable = sum(q.numel() for q in model.parameters() if q.requires_grad)
+        print(f"[lora] r={lora_r} -> {trainable/1e6:.3f}M trainable of {n_params/1e6:.2f}M "
+              f"({100*trainable/n_params:.2f}%)", flush=True)
+    emb_w = model.get_base_model().tok.weight if lora_r else model.tok.weight
+    emb = [emb_w] if emb_w.requires_grad else []
+    rest = [q for q in model.parameters() if q is not emb_w and q.requires_grad]
+    opt = torch.optim.AdamW([{"params": rest, "mult": 1.0}] +
+                            ([{"params": emb, "mult": emb_lr_mult}] if emb else []),
                             lr=lr, betas=(0.9, 0.95), weight_decay=0.01)
     steps_per_epoch = math.ceil(len(train_tok) / batch)
     total = steps_per_epoch * epochs if max_steps is None else min(max_steps, steps_per_epoch * epochs)

@@ -98,8 +98,13 @@ def _cover(tok, nt_start: int, nt_end: int):
 
 
 def _kmer_letters(tok, device):
-    """(n_content, k) nt ids 1..4 of every content token, for prefix-consistent decoding."""
-    ids = (tok.content_ids - tok.content_ids[0]).numpy()
+    """(n_content, k) nt ids 1..4 of every content token, for prefix-consistent decoding.
+
+    A tokenizer whose content ids are not the contiguous base-4 block our own tokenizers use --
+    a released checkpoint's vocabulary, say -- supplies the table itself."""
+    if hasattr(tok, "kmer_letters"):
+        return tok.kmer_letters(device)
+    ids = (tok.content_ids.cpu() - tok.content_ids.cpu()[0]).numpy()
     return torch.from_numpy(np.stack([(ids // p) % 4 + 1 for p in tok._pow], 1)).to(device)
 
 

@@ -86,16 +86,48 @@ class EvoVocab:
 
 
 class EvoModel(torch.nn.Module):
-    def __init__(self, hf):
-        super().__init__()
-        self.hf = hf
+    """Chunks the batch, because the rulers do not know they are driving a 7B model.
 
-    def forward(self, ids: torch.Tensor):
+    `rank_probe` scores a canary against its whole candidate pool in one forward, which is free for
+    a 12.9M backbone and 2.8 GiB of FFT workspace for StripedHyena at 4096 channels. Chunking here
+    keeps every scorer and the extraction loop unchanged."""
+
+    def __init__(self, hf, max_batch: int = 2):
+        super().__init__()
+        self.hf, self.max_batch = hf, max_batch
+
+    def _one(self, ids):
         out = self.hf(input_ids=ids)
         return out.logits if hasattr(out, "logits") else out[0]
 
+    def forward(self, ids: torch.Tensor):
+        if ids.shape[0] <= self.max_batch:
+            return self._one(ids)
+        return torch.cat([self._one(ids[i:i + self.max_batch])
+                          for i in range(0, ids.shape[0], self.max_batch)], 0)
 
-def load(device, lora_r: int, lora_alpha: int, lora_dropout: float, grad_ckpt: bool):
+
+def _fix_triton_libcuda():
+    """Triton insists on finding libcuda.so beside the libcuda.so.1 that ldconfig reports, and
+    Ubuntu 18.04 ships only the runtime library. CUDA's own stub is the documented substitute for
+    the link step (the real driver is loaded at run time), so point Triton at it rather than adding
+    a symlink to a system directory on a machine other people share."""
+    import glob
+    stubs = [d for d in ("/usr/local/cuda/lib64/stubs", "/usr/local/cuda-12.1/lib64/stubs")
+             if glob.glob(d + "/libcuda.so")]
+    if not stubs:
+        return
+    try:
+        import triton.common.build as tb
+        tb.libcuda_dirs = lambda: stubs
+        print(f"[evo] triton libcuda_dirs -> {stubs[0]}", flush=True)
+    except Exception as e:
+        print(f"[evo] could not patch triton: {type(e).__name__}: {e}", flush=True)
+
+
+def load(device, lora_r: int, lora_alpha: int, lora_dropout: float, grad_ckpt: bool,
+         max_batch: int = 2):
+    _fix_triton_libcuda()
     from transformers import AutoModelForCausalLM
     hf = AutoModelForCausalLM.from_pretrained(ROOT, trust_remote_code=True,
                                               torch_dtype=torch.bfloat16)
@@ -109,14 +141,17 @@ def load(device, lora_r: int, lora_alpha: int, lora_dropout: float, grad_ckpt: b
         from peft import LoraConfig, get_peft_model
         hf = get_peft_model(hf, LoraConfig(
             r=lora_r, lora_alpha=lora_alpha, lora_dropout=lora_dropout, bias="none",
-            target_modules=["Wqkv", "dense", "gated_layers", "wo"], task_type="CAUSAL_LM"))
+            # no task_type: peft's CAUSAL_LM wrapper calls forward(inputs_embeds=...), which
+            # StripedHyena does not accept. Without it peft only injects adapters into the
+            # targeted Linear layers and leaves the forward signature alone.
+            target_modules=["Wqkv", "dense", "gated_layers", "wo"]))
         tr = sum(p.numel() for p in hf.parameters() if p.requires_grad)
         print(f"[evo] LoRA r={lora_r} -> {tr/1e6:.2f}M trainable of {n/1e9:.2f}B "
               f"({100*tr/n:.4f}%)", flush=True)
     hf = hf.to(device)
     print(f"[evo] {n/1e9:.2f}B parameters, {torch.cuda.memory_allocated(device)/2**30:.1f} GiB on card",
           flush=True)
-    return EvoModel(hf), n
+    return EvoModel(hf, max_batch), n
 
 
 def main(argv=None):
@@ -142,6 +177,7 @@ def main(argv=None):
     ap.add_argument("--lora_alpha", type=int, default=16)
     ap.add_argument("--lora_dropout", type=float, default=0.05)
     ap.add_argument("--no_grad_ckpt", action="store_true")
+    ap.add_argument("--max_batch", type=int, default=2, help="forward-pass chunk for the scorers")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--gpu", type=int, default=0)
     ap.add_argument("--save_epochs", default="1,2,5,10")
@@ -168,7 +204,8 @@ def main(argv=None):
     (out_dir / "args.json").write_text(json.dumps(vars(args), indent=1), encoding="utf-8")
     ds.save_meta(out_dir / "data_meta.json")
 
-    model, n_params = load(device, args.lora_r, args.lora_alpha, args.lora_dropout, not args.no_grad_ckpt)
+    model, n_params = load(device, args.lora_r, args.lora_alpha, args.lora_dropout,
+                           not args.no_grad_ckpt, args.max_batch)
     voc = EvoVocab().to(device)
     train_tok = torch.from_numpy(voc.encode(ds.train))
     bos = torch.full((train_tok.shape[0], 1), voc.bos_id, dtype=train_tok.dtype)

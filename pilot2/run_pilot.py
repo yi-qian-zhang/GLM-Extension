@@ -56,6 +56,9 @@ def main(argv=None):
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--save_epochs", default="", help="comma list of 1-indexed epochs to snapshot, e.g. 1,2,5,10")
     ap.add_argument("--score_snapshots", action="store_true", help="also score every saved ep<N>.pt -> scores_ep<N>.json")
+    ap.add_argument("--d_model", type=int, default=None, help="backbone width (default 512)")
+    ap.add_argument("--n_layers", type=int, default=None, help="backbone depth (default 4)")
+    ap.add_argument("--n_heads", type=int, default=None, help="attention heads (default 8)")
     ap.add_argument("--d_ff", type=int, default=None, help="capacity control: feed-forward width (default 4*d)")
     ap.add_argument("--emb_rank", type=int, default=None, help="capacity control: factorized tied embedding rank")
     ap.add_argument("--emb_lr_mult", type=float, default=1.0, help="learning-rate multiplier for the token embedding only")
@@ -99,7 +102,9 @@ def main(argv=None):
     print(f"[{name}] tokenizer {tok.name}: k={tok.k}, vocab={tok.vocab_size}, {tok.n_tokens} tok/window; "
           f"train={ds.train.shape} probes={len(ds.probes)}", flush=True)
 
-    model_kw = {k: v for k, v in (("d_ff", args.d_ff), ("emb_rank", args.emb_rank)) if v}
+    model_kw = {k: v for k, v in (("d_model", args.d_model), ("n_layers", args.n_layers),
+                                  ("n_heads", args.n_heads), ("d_ff", args.d_ff),
+                                  ("emb_rank", args.emb_rank)) if v}
     if args.pos_enc != "abs":
         model_kw["pos_enc"] = args.pos_enc
     if args.score_only:

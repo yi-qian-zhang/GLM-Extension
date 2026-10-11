@@ -1,4 +1,4 @@
-"""Scorers, ranking and prefix extraction -- tokenizer-aware.
+"""Scorers, ranking and extraction (prefix-conditioned and edge-conditioned) -- tokenizer-aware.
 
 Every score is a sum of log2 token probabilities converted to BITS PER
 NUCLEOTIDE by dividing by the number of nucleotides covered, never by the
@@ -193,6 +193,86 @@ def extract_prefix(model, tok, kind, probe: Probe, host: np.ndarray, device, k_n
     return {"k_revealed_nt": k_nt, "offset": int(offset), "n_generated_nt": int(end_nt - start_nt),
             "n_generated_tok": int(end - start),
             "exact": bool(ham == 0), "hamming_nt": ham, "chance_exact": float(4.0 ** -(end_nt - start_nt)),
+            "pred_nt": decode(pred_nt.cpu().numpy()), "truth_nt": decode(truth_nt.cpu().numpy())}
+
+
+@torch.no_grad()
+def extract_infill(model, tok, kind, probe: Probe, host: np.ndarray, device, k_nt: int = 48,
+                   offset: int = PROBE_OFFSET, order: str = "confidence"):
+    """Edge-conditioned extraction for bidirectional models: the same 48 nt are generated as in
+    `extract_prefix`, but the host AFTER the canary stays visible instead of being masked.
+
+    Why this exists. `extract_prefix` masks everything from the first unknown token to the end of
+    the window, which matches autoregressive conditioning and is the protocol the paper reports.
+    For a model that denoises arbitrary positions that is one mask geometry among many, and
+    prefix-only probing is known to understate extractability: on diffusion language models
+    edge-conditioned masks recover up to three times more verbatim sequences than prefix-conditioned
+    ones (Wang and Asokan, arXiv:2605.24173). A masked cell that reproduces nothing under
+    `extract_prefix` has therefore not been shown safe until it is also asked in its own idiom.
+
+    Decoding order: "confidence" fills the masked position whose argmax probability is highest,
+    re-runs the model, and repeats (the usual diffusion decoding, and the stronger attack);
+    "left" reproduces the left-to-right order of `extract_prefix` for a controlled comparison.
+    Returns None for causal models, which cannot condition on a suffix.
+    """
+    if kind == "ar":
+        return None
+    content = tok.content_ids.to(device)
+    start_nt, end_nt = offset + k_nt, offset + PROBE_LEN
+    lo, hi = _cover(tok, start_nt, end_nt)
+    start, end = tok.nt_to_tok(lo), tok.nt_to_tok(hi)
+    win = host.copy()
+    win[offset:offset + PROBE_LEN] = probe.seq
+    xt = torch.from_numpy(tok.encode(win[None]))[0].to(device)
+    truth_nt = torch.from_numpy(win[start_nt:end_nt]).to(device)
+    letters = _kmer_letters(tok, device) if lo < start_nt else None
+
+    def allowed(pos):
+        """As in extract_prefix: keep the revealed letters of a partly-revealed boundary token."""
+        if letters is None:
+            return None
+        nt0 = pos if hasattr(tok, "fill_id") else pos * tok.k
+        known = [(i, int(win[nt0 + i])) for i in range(tok.k) if nt0 + i < start_nt]
+        if not known:
+            return None
+        m = torch.ones(len(content), dtype=torch.bool, device=device)
+        for i, v in known:
+            m &= letters[:, i] == v
+        return m
+
+    cur = xt.clone()
+    cur[start:end] = tok.mask_id                      # only the middle; the suffix stays real
+    xb = with_bos(cur[None], tok.bos_id)
+    todo = [pos for pos in range(start, end)
+            if not (hasattr(tok, "is_fill") and tok.is_fill(pos))]
+    for pos in range(start, end):                     # spaced tokenizers: filler is deterministic
+        if hasattr(tok, "is_fill") and tok.is_fill(pos):
+            xb[0, pos + 1] = tok.fill_id
+    while todo:
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            logits = model(xb)[0].float()
+        best, best_pos, best_tok = -1.0, None, None
+        for pos in todo:
+            lc = logits[pos + 1][content]
+            m = allowed(pos)
+            if m is not None:
+                lc = lc.masked_fill(~m, float("-inf"))
+            pr = F.softmax(lc, dim=-1)
+            v, i = pr.max(0)
+            if order != "confidence":                 # left-to-right: take the first and stop
+                best_pos, best_tok = pos, content[i]
+                break
+            if float(v) > best:
+                best, best_pos, best_tok = float(v), pos, content[i]
+        xb[0, best_pos + 1] = best_tok
+        todo.remove(best_pos)
+    pred_tok = xb[0, start + 1:end + 1]
+    pred_nt = tok.decode_t(pred_tok[None])[0][start_nt - lo:end_nt - lo]
+    ham = int((pred_nt != truth_nt).sum())
+    return {"protocol": f"infill-{order}", "k_revealed_nt": k_nt, "offset": int(offset),
+            "n_generated_nt": int(end_nt - start_nt), "n_generated_tok": int(end - start),
+            "exact": bool(ham == 0), "hamming_nt": ham,
+            "chance_exact": float(4.0 ** -(end_nt - start_nt)),
             "pred_nt": decode(pred_nt.cpu().numpy()), "truth_nt": decode(truth_nt.cpu().numpy())}
 
 

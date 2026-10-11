@@ -19,9 +19,18 @@ in it by nature, and applies the paper's three rulers to them from the saved `fi
     prefix-conditioned extraction;
   * singletons (count 1) are the control, drawn from the same corpus and scored the same way.
 
+A duplicate found this way is confounded with predictability: a 96\,nt block that chromosome 22
+repeats nine times is usually a transposable element, and a model may complete it because the family
+is predictable rather than because it saw those copies. The control for that is the same logic the
+planted canaries use. `--heldout_rows` hashes windows of the same genome that the run never trained
+on, keeps the blocks that repeat there and occur ZERO times in the training set, and scores them the
+same way: same repeat families, same lengths, never seen. If trained duplicates are recovered and
+held-out duplicates of the same multiplicity are not, repetition in training is what is being
+measured, not biology.
+
 The claim to test is that the two axes of the paper reappear without planting: memorisation rising
-with how often the block repeats, and, at matched held-out loss, with the coarseness of the
-tokeniser. Writes <name>_natural.md next to the first root.
+with how often the block repeats, and with the coarseness of the tokeniser. Writes
+<name>_natural.md next to the first root.
 """
 from __future__ import annotations
 
@@ -46,26 +55,37 @@ BINS = [(1, 1), (2, 2), (3, 4), (5, 8), (9, 10 ** 9)]
 BINLAB = {(1, 1): "1 (control)", (2, 2): "2", (3, 4): "3-4", (5, 8): "5-8", (9, 10 ** 9): "9+"}
 
 
+def block_census(rows_iter, stride: int):
+    """-> {block bytes: [(row, offset)]} over whatever windows are handed in."""
+    where = defaultdict(list)
+    for r, w in rows_iter:
+        for off in range(0, len(w) - PROBE_LEN + 1, stride):
+            where[w[off:off + PROBE_LEN].tobytes()].append((int(r), int(off)))
+    return where
+
+
+def binned(where, dtype, exclude=None):
+    """-> {count_bin: [(seq, row, offset, count)]}, dropping blocks present in `exclude`."""
+    out = defaultdict(list)
+    for key, hits in where.items():
+        if exclude is not None and key in exclude:
+            continue
+        n = len(hits)
+        for lo, hi in BINS:
+            if lo <= n <= hi:
+                out[(lo, hi)].append((np.frombuffer(key, dtype=dtype).copy(), hits[0][0], hits[0][1], n))
+                break
+    return out
+
+
 def find_duplicates(train: np.ndarray, tag: np.ndarray, stride: int, max_rows: int):
     """-> {count_bin: [(seq, row, offset)]}, from blocks the corpus repeats on its own.
 
     `tag` is the dataset's canary tag per row (-1 = ordinary window); rows carrying a planted canary
     are skipped entirely, so a planted record can never be counted as a natural duplicate."""
     rows = np.flatnonzero(tag == -1)[:max_rows]
-    where = defaultdict(list)
-    for r in rows:
-        w = train[r]
-        for off in range(0, len(w) - PROBE_LEN + 1, stride):
-            where[w[off:off + PROBE_LEN].tobytes()].append((int(r), int(off)))
-    out = defaultdict(list)
-    for key, hits in where.items():
-        n = len(hits)
-        for lo, hi in BINS:
-            if lo <= n <= hi:
-                seq = np.frombuffer(key, dtype=train.dtype).copy()
-                out[(lo, hi)].append((seq, hits[0][0], hits[0][1], n))
-                break
-    return out
+    where = block_census(((r, train[r]) for r in rows), stride)
+    return binned(where, train.dtype), where
 
 
 def rebuild(d: Path, device):
@@ -98,6 +118,9 @@ def main(argv=None):
     ap.add_argument("--stride", type=int, default=12, help="block start spacing when hashing the corpus")
     ap.add_argument("--max_rows", type=int, default=5000, help="training windows to hash")
     ap.add_argument("--per_bin", type=int, default=25, help="blocks scored per occurrence bin")
+    ap.add_argument("--heldout_rows", type=int, default=0,
+                    help="windows of the same genome the run never trained on, hashed as the control "
+                         "population: blocks that repeat there and never occur in training")
     ap.add_argument("--pool", type=int, default=100)
     ap.add_argument("--name", default="natural")
     args = ap.parse_args(argv)
@@ -111,7 +134,17 @@ def main(argv=None):
             if not m or not (d / "final.pt").exists() or not (d / "args.json").exists():
                 continue
             model, tok, kind, ds, a = rebuild(d, device)
-            dups = find_duplicates(ds.train, ds.train_probe_id, args.stride, args.max_rows)
+            dups, train_blocks = find_duplicates(ds.train, ds.train_probe_id, args.stride, args.max_rows)
+            held = {}
+            if args.heldout_rows and a.get("data", "synthetic") != "synthetic":
+                from .real_data import load_windows
+                all_w = load_windows(a.get("fasta") or DATA_PATHS[a["data"]])
+                perm = np.random.default_rng(a["data_seed"]).permutation(len(all_w))
+                used = a["n_train"] + a["n_val"] + a["n_test"]
+                tail = perm[used:used + args.heldout_rows]
+                held = binned(block_census(((int(i), all_w[i]) for i in tail), args.stride),
+                              all_w.dtype, exclude=set(train_blocks))
+                held_rows = {int(i): all_w[i] for i in tail}
             key = (a.get("data", "synthetic"), args.stride)
             census[key] = {BINLAB[b]: len(dups.get(b, [])) for b in BINS}
             singles = [x[0] for x in dups.get((1, 1), [])]
@@ -119,14 +152,15 @@ def main(argv=None):
                 print(f"  {d.name}: only {len(singles)} singletons, skipping")
                 continue
             pool = np.stack(singles[:args.pool])
-            for b in BINS:
-                items = dups.get(b, [])
+            for pop, label in ((dups, "trained"), (held, "held-out")):
+             for b in BINS:
+                items = pop.get(b, [])
                 if not items:
                     continue
                 sel = [items[i] for i in rng.permutation(len(items))[:args.per_bin]]
                 ex, bits, r1 = [], [], []
                 for seq, row, off, n in sel:
-                    host = ds.train[row].copy()
+                    host = (ds.train[row] if label == "trained" else held_rows[row]).copy()
                     p = Probe(-1, n, seq, [])
                     sc = "ar" if kind == "ar" else "pll"
                     rk = rank_probe(model, tok, sc, p, host, pool, device, offset=off)
@@ -134,10 +168,10 @@ def main(argv=None):
                     bits.append(rk["probe_bits_per_nt"])
                     r1.append(float(rk["rank"] == 1))
                     ex.append(float(xt["exact"]))
-                rows_md.append((a.get("data", "synthetic"), a["tokenizer"], a.get("objective", "ar"),
+                rows_md.append((a.get("data", "synthetic"), a["tokenizer"], label,
                                 a["seed"], BINLAB[b], len(sel), float(np.mean(bits)),
                                 float(np.mean(r1)), float(np.mean(ex))))
-                print(f"  {d.name:22s} dup={BINLAB[b]:11s} n={len(sel):3d} "
+                print(f"  {d.name:22s} {label:8s} dup={BINLAB[b]:11s} n={len(sel):3d} "
                       f"bits {np.mean(bits):.3f}  rank-1 {100 * np.mean(r1):5.1f}%  "
                       f"exact {100 * np.mean(ex):5.1f}%", flush=True)
             del model
@@ -157,7 +191,7 @@ def main(argv=None):
     for (data, _stride), c in census.items():
         md.append(f"| {data} | " + " | ".join(str(c.get(BINLAB[b], 0)) for b in BINS) + " |")
     md += ["", "## Scores", "",
-           "| dataset | tokeniser | objective | seed | occurrences | n | bits/nt | rank-1 | verbatim |",
+           "| dataset | tokeniser | population | seed | occurrences | n | bits/nt | rank-1 | verbatim |",
            "|---|---|---|---|---|---|---|---|---|"]
     for r in rows_md:
         md.append(f"| {r[0]} | {r[1]} | {r[2]} | {r[3]} | {r[4]} | {r[5]} | {r[6]:.3f} | "

@@ -27,10 +27,11 @@
 # decoding, the published prefix number as a check, and ICM. The r=0 non-member control goes through
 # every protocol at score_run's own fresh offset, so it is phase-matched.
 #
-# Scheduling: card 0 only. It does NOT wait for queue_1012a: recon_audit reads saved checkpoints
-# through its own code and never touches score.py, so there is no consistency coupling to that
-# queue -- the only shared resource is memory, and card 0 carries at most a 59.9M cell (about
-# 13 GiB) beside this sweep's 3 GiB. The 201M cells sit on cards 2 and 3 and are left alone.
+# Scheduling: cards 0 and 3, two halves in parallel. It does NOT wait for queue_1012a, because
+# recon_audit reads saved checkpoints through its own code and never imports a modified score.py, so
+# the only shared resource is memory: this sweep needs about 1.5 GiB and the largest cell queue_1012a
+# will put beside it is 12.7 GiB on card 3 and 13 GiB on card 0. Card 2 carries the 201M 3-mer cell
+# at 23 GiB and is left strictly alone.
 source ~/miniconda3/etc/profile.d/conda.sh && conda activate glm
 cd /data/wh/yqdata/GLM-Extension
 export GLMEXT_DATA=/data/wh/yqdata/glm_data
@@ -41,17 +42,27 @@ log "start"
 
 # 20 probes per tier and 4 sweeps: the 150-round cells converged inside 4 and the grid is 92 cells.
 # core_mlm is a byte-for-byte duplicate of core_all (see 17 Sec. 3.31) and is deliberately omitted.
-A="--tiers 1,4,16 --max_probes 20 --sweeps 4 --gpu 0 --name recon_audit"
-for root in human_mlm ecoli_mlm yeast_mlm gue_mlm core_all ecoli_big; do
-  run "recon $root" python -m pilot2.recon_audit --root outputs/$root $A \
-    > outputs/recon_$root.log 2>&1
-done
+A="--tiers 1,4,16 --max_probes 20 --sweeps 4 --name recon_audit"
 
-# the pretrained-prior arm of queue_1012a, which only exists once that queue reaches stage 2
+half(){
+  local g=$1; shift
+  for root in "$@"; do
+    run "recon $root (gpu $g)" python -m pilot2.recon_audit --root outputs/$root $A --gpu $g \
+      > outputs/recon_$root.log 2>&1
+  done
+}
+half 0 human_mlm ecoli_mlm yeast_mlm &
+half 3 gue_mlm core_all ecoli_big &
+wait
+log "grid done"
+
+# the pretrained-prior arm of queue_1012a, plus its scale cells at 20 probes for comparability;
+# both exist only once that queue has finished
 until grep -q Q1012A_DONE outputs/queue_1012a.log 2>/dev/null; do sleep 300; done
-for d in outputs/ft22_mlm_long/*/; do
+for d in outputs/ft22_mlm_long/*/ outputs/scale_long/s59 outputs/scale_long/s201; do
   [ -d "$d" ] || continue
-  run "recon $(basename $d)" python -m pilot2.recon_audit --root "$d" $A \
-    > "outputs/recon_$(basename $d).log" 2>&1
+  t=$(basename "$d")
+  run "recon $t" python -m pilot2.recon_audit --root "$d" $A --gpu 3 \
+    > "outputs/recon_$t.log" 2>&1
 done
 log Q1012C_DONE

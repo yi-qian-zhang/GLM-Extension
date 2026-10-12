@@ -29,12 +29,17 @@ run "download 500m" huggingface-cli download InstaDeepAI/nucleotide-transformer-
   --local-dir $M --exclude 'jax_model/*'
 ls -la $M >> $L
 
-# wait for the cards: queue_1012a has all four
-until ! pgrep -f 'pilot2\.(run_pilot|nt|evo)' > /dev/null; do sleep 180; done
-log "cards free"
-
 A="--size 250m --epochs 50 --probes_per_tier 50 --n_nonmember 50 --pool 100 --floor_n 200 --probe_offset random --save_epochs 1,3,8,15,30,50 --score_epoch0 --batch 8 --accum 2 --out outputs/nt"
-( run "250m gue" python -m pilot2.nt $A --data gue --gpu 0 > outputs/nt/gue.log 2>&1 ) &
+
+# The 250M repair goes on card 1 straight away rather than waiting for queue_1012a to finish.
+# Card 1 is idle and the largest thing that queue will ever put on it is a 59.9M cell, so about
+# 13 GiB of NT beside 6 GiB leaves headroom. The 500M cells need roughly 20 GiB and card 3 is
+# destined for a 201M cell, so those do wait -- an out-of-memory kill there would take out a cell
+# of the experiment that decides the paper's wording.
+run "250m gue" python -m pilot2.nt $A --data gue --gpu 1 > outputs/nt/gue.log 2>&1
+
+until grep -q Q1012A_DONE outputs/queue_1012a.log 2>/dev/null; do sleep 300; done
+log "queue_1012a finished, cards free for the 500M cells"
 
 if [ -f $M/model.safetensors ] || [ -f $M/pytorch_model.bin ]; then
   ( run "500m ecoli" python -m pilot2.nt ${A/--size 250m/--size 500m} --data ecoli --gpu 1 \

@@ -198,7 +198,10 @@ def main(argv=None):
         ds = build_dataset(args.n_train, args.n_val, args.n_test, args.probes_per_tier, tiers,
                            args.n_nonmember, args.data_seed, offset_mode=args.probe_offset)
 
-    name = f"evo1_lora{args.lora_r}_{args.data}_s{args.seed}"
+    # the run name carries every knob that changes the experiment, so two cells of the same arm
+    # can never write into the same directory
+    name = (f"evo1_lora{args.lora_r}_{args.data}_e{args.epochs}_n{args.n_train}"
+            f"_{args.probe_offset}_s{args.seed}")
     out_dir = Path(args.out) / name
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "args.json").write_text(json.dumps(vars(args), indent=1), encoding="utf-8")
@@ -257,6 +260,12 @@ def main(argv=None):
         if epoch + 1 in save_epochs:
             score(f"ep{epoch+1}", epoch + 1)
     log.close()
+    if args.lora_r:                      # keep the adapter: it is megabytes, and without it the
+        try:                             # fine-tuned state cannot be re-examined afterwards
+            model.hf.save_pretrained(out_dir / "adapter")
+            print(f"[{name}] adapter saved", flush=True)
+        except Exception as e:
+            print(f"[{name}] could not save adapter: {type(e).__name__}: {e}", flush=True)
     sc = score("final", args.epochs)
     sc.update(n_params=n_params, total_sec=time.time() - t0)
     (out_dir / "scores_final.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")

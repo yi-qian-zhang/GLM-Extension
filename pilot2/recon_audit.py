@@ -174,7 +174,7 @@ def target_surprise(model, tok, kind, probe: Probe, host, device, k_nt=48, offse
 
 @torch.no_grad()
 def extract_icm(model, tok, kind, probe: Probe, host, device, k_nt=48, offset=PROBE_OFFSET,
-                sweeps: int = 6, init: str = "confidence"):
+                sweeps: int = 6, init: str = "confidence", restarts: int = 1):
     """Iterated conditional modes: re-mask ONE target token at a time, sweep to a fixed point.
 
     The conditional used here (1 of ~48 tokens masked, the rest at their current values) is the one
@@ -195,50 +195,110 @@ def extract_icm(model, tok, kind, probe: Probe, host, device, k_nt=48, offset=PR
     # the shipped edge-conditioned decode, reported beside ICM so the gain is attributable
     seed_pred = extract_infill(model, tok, kind, probe, host, device, k_nt=k_nt, offset=offset,
                                order=init)
-    cur = xt.clone()
-    cur[start:end] = tok.mask_id
-    xb = with_bos(cur[None], tok.bos_id)
+    base = xt.clone()
+    base[start:end] = tok.mask_id
+    xb0 = with_bos(base[None], tok.bos_id)
     todo = []
     for pos in range(start, end):
         if hasattr(tok, "is_fill") and tok.is_fill(pos):
-            xb[0, pos + 1] = tok.fill_id
+            xb0[0, pos + 1] = tok.fill_id
         else:
             todo.append(pos)
-    with torch.autocast("cuda", dtype=torch.bfloat16):   # all target slots at once, then sweep
-        logits = model(xb)[0].float()
-    for pos in todo:
-        lc = logits[pos + 1][content]
-        m = allowed(pos)
-        if m is not None:
-            lc = lc.masked_fill(~m, float("-inf"))
-        xb[0, pos + 1] = content[int(lc.argmax())]
 
-    n_sweeps = 0
-    for _ in range(sweeps):
-        changed = 0
-        n_sweeps += 1
+    def masked_logits(xb, pos):
+        keep = xb[0, pos + 1].clone()
+        xb[0, pos + 1] = tok.mask_id
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            out = model(xb)[0, pos + 1].float()
+        xb[0, pos + 1] = keep
+        lc = out[content]
+        m = allowed(pos)
+        return lc.masked_fill(~m, float("-inf")) if m is not None else lc
+
+    def sweep(xb):
+        """Re-mask one target token at a time and take its mode, until nothing changes."""
+        used = 0
+        for _ in range(sweeps):
+            changed = 0
+            used += 1
+            for pos in todo:
+                new_tok = content[int(masked_logits(xb, pos).argmax())]
+                changed += int(new_tok.item() != xb[0, pos + 1].item())
+                xb[0, pos + 1] = new_tok
+            if changed == 0:
+                break
+        return used
+
+    def pseudo_ll(xb):
+        """Sum of log2 p(token | all others) over the target, computable WITHOUT the truth.
+
+        This is what lets the attack choose between fixed points. Without it, restarts would only
+        be an oracle number, because an attacker cannot ask which reconstruction is correct.
+        """
+        tot = 0.0
         for pos in todo:
-            keep = xb[0, pos + 1].clone()
-            xb[0, pos + 1] = tok.mask_id
+            lp = F.log_softmax(masked_logits(xb, pos).float(), dim=-1) / math.log(2.0)
+            tot += float(lp[int((content == xb[0, pos + 1]).nonzero()[0, 0])])
+        return tot
+
+    def read_out(xb):
+        pred_nt = tok.decode_t(xb[0, start + 1:end + 1][None])[0][start_nt - lo:end_nt - lo]
+        return pred_nt, int((pred_nt != truth_nt).sum())
+
+    results = []
+    for r in range(max(1, restarts)):
+        xb = xb0.clone()
+        if r == 0:                                   # the published initialisation: one joint pass
             with torch.autocast("cuda", dtype=torch.bfloat16):
-                logits = model(xb)[0, pos + 1].float()
-            lc = logits[content]
-            m = allowed(pos)
-            if m is not None:
-                lc = lc.masked_fill(~m, float("-inf"))
-            new = content[int(lc.argmax())]
-            xb[0, pos + 1] = new
-            changed += int(new.item() != keep.item())
-        if changed == 0:
-            break
-    pred_tok = xb[0, start + 1:end + 1]
-    pred_nt = tok.decode_t(pred_tok[None])[0][start_nt - lo:end_nt - lo]
-    ham = int((pred_nt != truth_nt).sum())
-    return {"protocol": f"icm-{init}", "sweeps_used": n_sweeps, "k_revealed_nt": k_nt,
+                logits = model(xb)[0].float()
+            for pos in todo:
+                lc = logits[pos + 1][content]
+                m = allowed(pos)
+                if m is not None:
+                    lc = lc.masked_fill(~m, float("-inf"))
+                xb[0, pos + 1] = content[int(lc.argmax())]
+        else:                                        # a random admissible start, seeded per probe
+            g = torch.Generator(device="cpu").manual_seed(1000 * int(probe.probe_id) + r)
+            for pos in todo:
+                m = allowed(pos)
+                idx = torch.arange(len(content)) if m is None else torch.nonzero(m.cpu())[:, 0]
+                xb[0, pos + 1] = content[int(idx[torch.randint(len(idx), (1,), generator=g)])]
+        used = sweep(xb)
+        pred_nt, ham_r = read_out(xb)
+        results.append({"score": pseudo_ll(xb), "ham": ham_r, "exact": ham_r == 0,
+                        "sweeps": used, "pred": decode(pred_nt.cpu().numpy())})
+
+    best = max(results, key=lambda d: d["score"])    # the attack's own choice, truth-free
+    ham, n_sweeps = best["ham"], best["sweeps"]
+    oracle = any(d["exact"] for d in results)
+
+    # The predictor that matches THIS decoder. The prefix-conditional top-1 rate bounds left-to-right
+    # decoding, and ICM beat that bound by two orders of magnitude on the one cell that extracts,
+    # because ICM conditions on the suffix and on the other target tokens. The operative quantity is
+    # therefore leave-one-out: every other target token at its TRUE value, one masked, is the
+    # conditional ICM converges to and the one the PLL scorer reads. Its product over the target
+    # tokens is the rate at which a fixed point can be the true string.
+    xb = xb0.clone()
+    for q in todo:
+        xb[0, q + 1] = xt[q]
+    loo_hits, loo_bits = [], 0.0
+    for pos in todo:
+        lc = masked_logits(xb, pos)
+        true = int((content == xt[pos]).nonzero()[0, 0])
+        lp = F.log_softmax(lc.float(), dim=-1) / math.log(2.0)
+        loo_bits -= float(lp[true])
+        loo_hits.append(bool(int(lc.argmax()) == true))
+    loo_rate = float(np.mean(loo_hits)) if loo_hits else float("nan")
+    return {"protocol": f"icm-{init}-r{restarts}", "sweeps_used": n_sweeps,
+            "k_revealed_nt": k_nt, "restarts": int(max(1, restarts)),
             "offset": int(offset), "n_generated_nt": int(end_nt - start_nt),
             "exact": bool(ham == 0), "hamming_nt": ham,
+            "oracle_exact": bool(oracle), "best_score": float(best["score"]),
+            "ham_by_restart": [d["ham"] for d in results],
+            "loo_top1": loo_rate, "loo_bits_per_nt": loo_bits / (end_nt - start_nt),
+            "loo_bound": loo_rate ** max(1, len(loo_hits)), "n_target_tok": len(todo),
             "seed_exact": bool(seed_pred["exact"]), "seed_hamming_nt": int(seed_pred["hamming_nt"]),
-            "pred_nt": decode(pred_nt.cpu().numpy()), "truth_nt": decode(truth_nt.cpu().numpy())}
+            "pred_nt": best["pred"], "truth_nt": decode(truth_nt.cpu().numpy())}
 
 
 def fresh_views(ds, seed, pool_size):
@@ -267,6 +327,9 @@ def main(argv=None):
     ap.add_argument("--tiers", default="1,4,16")
     ap.add_argument("--max_probes", type=int, default=25, help="per tier")
     ap.add_argument("--sweeps", type=int, default=6)
+    ap.add_argument("--restarts", type=int, default=1,
+                    help="ICM restarts; >1 adds random admissible starts and picks the fixed point "
+                         "with the best pseudo-log-likelihood, which an attacker can compute")
     ap.add_argument("--ckpt", default="final.pt")
     ap.add_argument("--name", default="recon_audit")
     ap.add_argument("--no_icm", action="store_true", help="target surprise only, no ICM decode")
@@ -298,7 +361,7 @@ def main(argv=None):
                     pre = extract_prefix(model, tok, kind, p, host, device, offset=off)
                     icm = (None if args.no_icm else
                            extract_icm(model, tok, kind, p, host, device, offset=off,
-                                       sweeps=args.sweeps))
+                                       sweeps=args.sweeps, restarts=args.restarts))
                     v = per[tier]
                     v["tgt_bits"].append(ts["target_bits_per_nt"])
                     v["top1"].append(ts["top1_rate"])
@@ -310,6 +373,10 @@ def main(argv=None):
                         v["icm_ham"].append(icm["hamming_nt"])
                         v["seed_exact"].append(float(icm["seed_exact"]))
                         v["seed_ham"].append(icm["seed_hamming_nt"])
+                        v["loo_top1"].append(icm["loo_top1"])
+                        v["loo_bound"].append(icm["loo_bound"])
+                        v["loo_bits"].append(icm["loo_bits_per_nt"])
+                        v["oracle"].append(float(icm["oracle_exact"]))
                     out["cells"].append({"tier": tier, "host": hname, "probe_id": p.probe_id,
                                          "target": ts, "prefix": pre, "icm": icm})
             (d / f"{args.name}.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
@@ -320,12 +387,16 @@ def main(argv=None):
                                  tgt_bits=m("tgt_bits"), top1=m("top1"), bound=m("bound"),
                                  pre_exact=m("pre_exact"), pre_ham=m("pre_ham"),
                                  icm_exact=m("icm_exact"), icm_ham=m("icm_ham"),
-                                 seed_exact=m("seed_exact"), seed_ham=m("seed_ham")))
+                                 seed_exact=m("seed_exact"), seed_ham=m("seed_ham"),
+                                 loo_top1=m("loo_top1"), loo_bound=m("loo_bound"),
+                                 loo_bits=m("loo_bits"), oracle=m("oracle")))
                 r = rows[-1]
                 print(f"  {d.name:28s} r={t:<3d} n={r['n']:3d} | target {r['tgt_bits']:5.3f} b/nt "
                       f"top1 {r['top1']:.2f} bound {r['bound']:.3f} | prefix {100*r['pre_exact']:5.1f}% "
                       f"(ham {r['pre_ham']:4.1f}) | icm {100*r['icm_exact']:5.1f}% "
-                      f"(ham {r['icm_ham']:4.1f}, seed {100*r['seed_exact']:5.1f}%)", flush=True)
+                      f"(ham {r['icm_ham']:4.1f}) | loo top1 {r['loo_top1']:.2f} "
+                      f"bound {r['loo_bound']:.3f} bits {r['loo_bits']:5.3f} | "
+                      f"oracle {100*r['oracle']:5.1f}%", flush=True)
             del model
             torch.cuda.empty_cache()
 
@@ -339,15 +410,24 @@ def main(argv=None):
           "token and `bound` = top1^steps is the implied ceiling on all-48-exact extraction, so a "
           "cell whose bound is ~0 cannot be rescued by any decoder. `icm` re-masks one target token "
           "at a time and sweeps to a fixed point, which is the in-distribution conditional the "
-          "surprise and recognition rulers read and neither shipped protocol enters; `seed` is the "
-          "confidence-ordered edge-conditioned decode it starts from.", "",
-          "| run | data | tok | obj | tier | n | target b/nt | top1 | bound | prefix exact | prefix ham | ICM exact | ICM ham |",
-          "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+          "surprise and recognition rulers read and neither shipped protocol enters. `LOO` is the "
+          "predictor that matches THAT decoder rather than left-to-right decoding: every other "
+          "target token held at its true value, one masked, which is the conditional ICM converges "
+          "to and the one the PLL scorer reads. `LOO bound` is its per-token top-1 rate raised to "
+          "the number of target tokens, so it is the rate at which a fixed point can be the true "
+          "string, and it is the column to read against `ICM exact`. `ICM exact` is the attack: "
+          "several restarts, each swept to a fixed point, and the one with the best "
+          "pseudo-log-likelihood is output, which an attacker can compute without the truth. "
+          "`any-restart` is the oracle over the same restarts and is an upper bound, not an "
+          "attack, because choosing it needs the answer.", "",
+          "| run | data | tok | obj | tier | n | target b/nt | top1 | prefix | LOO b/nt | LOO top1 | LOO bound | ICM exact | ICM ham | any-restart |",
+          "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         md.append(f"| {r['run']} | {r['data']} | {r['tok']} | {r['obj']} | r={r['tier']} | {r['n']} | "
-                  f"{r['tgt_bits']:.3f} | {r['top1']:.2f} | {r['bound']:.3f} | "
-                  f"{100*r['pre_exact']:.0f}% | {r['pre_ham']:.1f} | **{100*r['icm_exact']:.0f}%** | "
-                  f"{r['icm_ham']:.1f} |")
+                  f"{r['tgt_bits']:.3f} | {r['top1']:.2f} | "
+                  f"{100*r['pre_exact']:.0f}% | {r['loo_bits']:.3f} | {r['loo_top1']:.2f} | "
+                  f"{r['loo_bound']:.3f} | **{100*r['icm_exact']:.0f}%** | {r['icm_ham']:.1f} | "
+                  f"{100*r['oracle']:.0f}% |")
     mem = [r for r in rows if r["tier"] > 0]
     non = [r for r in rows if r["tier"] == 0]
     if mem and non:

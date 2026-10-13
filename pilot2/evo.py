@@ -34,7 +34,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from .data import WINDOW, build_dataset
+from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, build_dataset
 from .real_data import DATA_PATHS, build_real_dataset
 from .score import score_run
 
@@ -55,7 +55,8 @@ class EvoVocab:
         self.pad_id = self.bos_id = PAD_BYTE
         self.mask_id = PAD_BYTE                       # unused: Evo is causal
         self._to = np.zeros(5, dtype=np.int64)
-        for k, v in BYTES.items():
+        self._to[0] = PAD_BYTE        # nucleotide slot 0 never occurs in real windows; --canary_alone
+        for k, v in BYTES.items():    # uses it to mean PAD, so it must not encode to byte 0
             self._to[k] = v
         self._from = np.zeros(vocab_size, dtype=np.int64)
         for k, v in BYTES.items():
@@ -167,6 +168,12 @@ def main(argv=None):
     ap.add_argument("--n_nonmember", type=int, default=20)
     ap.add_argument("--data_seed", type=int, default=1234)
     ap.add_argument("--probe_offset", default="random", choices=["fixed", "random"])
+    ap.add_argument("--canary_alone", action="store_true",
+                    help="plant each canary as its OWN training example: the host row is filled "
+                         "with PAD and the canary written at PROBE_OFFSET, which reproduces the "
+                         "predecessor's geometry (byte-identical, position-locked repetitions, "
+                         "zero-entropy context, all gradient on the canary). Requires "
+                         "--probe_offset fixed. The non-member control is padded to match.")
     ap.add_argument("--pool", type=int, default=100)
     ap.add_argument("--floor_n", type=int, default=100)
     ap.add_argument("--epochs", type=int, default=10)
@@ -189,6 +196,10 @@ def main(argv=None):
     torch.manual_seed(args.seed)
     t0 = time.time()
 
+    if args.canary_alone and args.probe_offset != "fixed":
+        raise SystemExit("--canary_alone needs --probe_offset fixed: the point of the mode is that "
+                         "every repetition is byte-identical and position-locked, and the "
+                         "non-member control has to sit at the same offset to stay comparable")
     tiers = tuple(int(t) for t in args.tiers.split(","))
     if args.data != "synthetic":
         ds = build_real_dataset(args.fasta or DATA_PATHS[args.data], args.n_train, args.n_val, args.n_test,
@@ -198,10 +209,32 @@ def main(argv=None):
         ds = build_dataset(args.n_train, args.n_val, args.n_test, args.probes_per_tier, tiers,
                            args.n_nonmember, args.data_seed, offset_mode=args.probe_offset)
 
+    if args.canary_alone:
+        # The last protocol difference with the predecessor. There the canary IS a training example:
+        # a 64-nt string left-padded to 512, so every repetition is byte-identical, its position is
+        # locked, the rest of the row is zero-entropy padding rather than real genome competing for
+        # capacity, and -- because their loss carries ignore_index=pad_token_id -- all of the
+        # gradient on that row is on the canary. Here the host is filled with PAD and the canary is
+        # written at PROBE_OFFSET, which keeps the geometry identical to the one score_run will
+        # probe under --probe_offset fixed, so the measurement needs no change at all.
+        n_rows = 0
+        for pr in ds.probes:
+            if pr.repetitions <= 0:
+                continue
+            for j, row in enumerate(pr.host_rows):
+                ds.train[row][:] = 0
+                ds.train[row][PROBE_OFFSET:PROBE_OFFSET + PROBE_LEN] = pr.seq
+                pr.offsets[j] = PROBE_OFFSET
+                n_rows += 1
+        # the control has to be the same geometry, or it measures padding rather than membership
+        ds.fresh_hosts = np.zeros((max(8, len(ds.probes)), WINDOW), dtype=ds.train.dtype)
+        print(f"[evo] --canary_alone: {n_rows} training rows are now PAD + canary at "
+              f"{PROBE_OFFSET}, and the non-member control is padded to match", flush=True)
+
     # the run name carries every knob that changes the experiment, so two cells of the same arm
     # can never write into the same directory
     name = (f"evo1_lora{args.lora_r}_{args.data}_e{args.epochs}_n{args.n_train}"
-            f"_{args.probe_offset}_s{args.seed}")
+            f"_{args.probe_offset}{'_alone' if args.canary_alone else ''}_s{args.seed}")
     out_dir = Path(args.out) / name
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "args.json").write_text(json.dumps(vars(args), indent=1), encoding="utf-8")
@@ -243,8 +276,15 @@ def main(argv=None):
         for i in range(0, len(order), args.batch):
             ids = train_tok[order[i:i + args.batch]].to(device)
             logits = model(ids)[:, :-1]
+            tgt = ids[:, 1:]
+            if args.canary_alone:
+                # the predecessor's head uses ignore_index=pad_token_id, so padding carries no loss
+                # there; supervising it here would shrink the canary's share of an averaged loss and
+                # give any drop in memorisation a second explanation
+                tgt = tgt.clone()
+                tgt[tgt == voc.pad_id] = -100
             loss = F.cross_entropy(logits.reshape(-1, logits.shape[-1]).float(),
-                                   ids[:, 1:].reshape(-1))
+                                   tgt.reshape(-1), ignore_index=-100)
             (loss / args.accum).backward()
             if (i // args.batch + 1) % args.accum == 0:
                 torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 1.0)

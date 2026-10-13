@@ -184,6 +184,11 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--gpu", type=int, default=0)
     ap.add_argument("--save_epochs", default="1,3,8,15,30,50")
+    ap.add_argument("--save_ckpt", action="store_true",
+                    help="write the fine-tuned weights beside the scores, so the search-based "
+                         "decoder in pilot2.recon_audit can be run on a RELEASED checkpoint. The "
+                         "95-100%% reconstruction result is so far only measured on our own "
+                         "from-scratch backbone, which is the first thing a reviewer will ask about.")
     ap.add_argument("--score_epoch0", action="store_true")
     ap.add_argument("--out", default="outputs/nt")
     args = ap.parse_args(argv)
@@ -252,12 +257,16 @@ def main(argv=None):
             sc["epoch"] = epoch + 1
             (out_dir / f"scores_ep{epoch+1}.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
             print(f"[{name}] ep{epoch+1} floor {sc['floors'][0]['bits_per_nt_mean']:.4f}", flush=True)
+            if args.save_ckpt:
+                torch.save(model.hf.state_dict(), out_dir / f"ckpt_ep{epoch+1}.pt")
     log.close()
     model.eval()
     sc = score_run(model, voc, kind, ds, device, pool_size=args.pool, seed=args.seed,
                    floor_n=args.floor_n, offset_mode=args.probe_offset)
     sc.update(epoch=args.epochs, n_params=n_params, total_sec=time.time() - t0)
     (out_dir / "scores_final.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
+    if args.save_ckpt:
+        torch.save(model.hf.state_dict(), out_dir / "final.pt")
     print(f"[{name}] done in {time.time()-t0:.0f}s -> {out_dir}", flush=True)
     return 0
 

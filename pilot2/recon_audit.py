@@ -58,6 +58,8 @@ except ImportError:                      # pragma: no cover
 
 # accepts the plain cells and the --init_from / --lora_r ones, which run_pilot names <tok>_<obj>_ft_s<n>
 RUN = re.compile(r"(?P<tok>char|\d+mer(?:sp)?)_(?P<obj>ar|mlm[0-9.]+)(?:_ft)?(?:_lora\d+)?_s(?P<seed>\d+)$")
+# released Nucleotide Transformer cells, e.g. nt250m_mlm_ecoli_s0, which pilot2/nt.py names itself
+NT_RUN = re.compile(r"nt\d+m_(?:ar|mlm)_[a-z0-9]+_s\d+$")
 
 
 def rebuild(d: Path, device, ckpt="final.pt"):
@@ -68,7 +70,8 @@ def rebuild(d: Path, device, ckpt="final.pt"):
     """
     a = json.loads((d / "args.json").read_text(encoding="utf-8"))
     kind, _ = parse_objective(a["objective"])
-    tok = get_tokenizer(a["tokenizer"], 288)
+    is_nt = "size" in a                  # a released Nucleotide Transformer cell, not our backbone
+    tok = _nt_vocab(a["size"]) if is_nt else get_tokenizer(a["tokenizer"], 288)
     tiers = tuple(int(t) for t in str(a["tiers"]).split(","))
     if a.get("data", "synthetic") != "synthetic":
         ds = build_real_dataset(a.get("fasta") or DATA_PATHS[a["data"]], a["n_train"], a["n_val"],
@@ -79,6 +82,15 @@ def rebuild(d: Path, device, ckpt="final.pt"):
         ds = build_dataset(a["n_train"], a["n_val"], a["n_test"], a["probes_per_tier"], tiers,
                            a["n_nonmember"], a["data_seed"], offset_mode=a["probe_offset"],
                            enrich_k=a.get("enrich_k"), enrich_factor=a.get("enrich_factor", 1.0))
+    if is_nt:
+        # The 95-100 % reconstruction result is measured on our own from-scratch backbone. Asking a
+        # RELEASED masked checkpoint the same question is the obvious next thing a reader wants, and
+        # it needs the fine-tuned weights, which pilot2/nt.py now writes under --save_ckpt.
+        from . import nt as ntmod
+        model, _ = ntmod.load(a["size"], False, device)
+        model.hf.load_state_dict(torch.load(d / ckpt, map_location=device))
+        model.eval()
+        return model, tok, kind, ds, a
     kw = {k: v for k, v in (("d_model", a.get("d_model")), ("n_layers", a.get("n_layers")),
                             ("n_heads", a.get("n_heads")), ("d_ff", a.get("d_ff")),
                             ("emb_rank", a.get("emb_rank"))) if v}
@@ -90,6 +102,13 @@ def rebuild(d: Path, device, ckpt="final.pt"):
     model.load_state_dict(sd, strict=False) if any("lora" in k for k in sd) else model.load_state_dict(sd)
     model.eval()
     return model, tok, kind, ds, a
+
+
+def _nt_vocab(size: str):
+    from pathlib import Path as _P
+
+    from . import nt as ntmod
+    return ntmod.NTVocab(_P(ntmod.ROOT) / ntmod.SIZES[size])
 
 
 def _span(tok, offset, k_nt):
@@ -342,12 +361,15 @@ def main(argv=None):
         rd = Path(root)
         dirs = [rd] if (rd / "args.json").exists() else sorted(p for p in rd.iterdir() if p.is_dir())
         for d in dirs:
-            if not ((d / "args.json").exists() and (d / args.ckpt).exists() and RUN.fullmatch(d.name)):
+            if not ((d / "args.json").exists() and (d / args.ckpt).exists()
+                    and (RUN.fullmatch(d.name) or NT_RUN.fullmatch(d.name))):
                 continue
             model, tok, kind, ds, a = rebuild(d, device, args.ckpt)
+            tok = tok.to(device) if hasattr(tok, "to") else tok
             fh, fo = fresh_views(ds, a["seed"], a.get("pool", 500))
             out = {"run": d.name, "ckpt": args.ckpt, "data": a.get("data", "synthetic"),
-                   "objective": a["objective"], "tokenizer": a["tokenizer"], "seed": a["seed"],
+                   "objective": a["objective"], "tokenizer": a.get("tokenizer", a.get("size")),
+                   "seed": a["seed"],
                    "d_model": a.get("d_model"), "n_layers": a.get("n_layers"), "cells": []}
             per = defaultdict(lambda: defaultdict(list))
             for tier in tiers + [0]:
@@ -382,7 +404,8 @@ def main(argv=None):
             (d / f"{args.name}.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
             for t in sorted(per, reverse=True):
                 m = lambda k: float(np.mean(per[t][k])) if per[t][k] else float("nan")
-                rows.append(dict(run=d.name, data=out["data"], tok=a["tokenizer"], obj=a["objective"],
+                rows.append(dict(run=d.name, data=out["data"],
+                                 tok=a.get("tokenizer", a.get("size")), obj=a["objective"],
                                  seed=a["seed"], tier=t, n=len(per[t]["tgt_bits"]),
                                  tgt_bits=m("tgt_bits"), top1=m("top1"), bound=m("bound"),
                                  pre_exact=m("pre_exact"), pre_ham=m("pre_ham"),

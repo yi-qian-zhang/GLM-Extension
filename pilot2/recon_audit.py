@@ -69,17 +69,18 @@ def rebuild(d: Path, device, ckpt="final.pt"):
     is the 59.9M (768/8/12) and 201M (1024/16/16) arm -- dies in load_state_dict.
     """
     a = json.loads((d / "args.json").read_text(encoding="utf-8"))
-    kind, _ = parse_objective(a["objective"])
     is_nt = "size" in a                  # a released Nucleotide Transformer cell, not our backbone
+    kind = _kind_of(a)
     tok = _nt_vocab(a["size"]) if is_nt else get_tokenizer(a["tokenizer"], 288)
     tiers = tuple(int(t) for t in str(a["tiers"]).split(","))
+    n_val, n_test = _split_sizes(a)
     if a.get("data", "synthetic") != "synthetic":
-        ds = build_real_dataset(a.get("fasta") or DATA_PATHS[a["data"]], a["n_train"], a["n_val"],
-                                a["n_test"], a["probes_per_tier"], tiers, a["n_nonmember"],
+        ds = build_real_dataset(a.get("fasta") or DATA_PATHS[a["data"]], a["n_train"], n_val,
+                                n_test, a["probes_per_tier"], tiers, a["n_nonmember"],
                                 a["data_seed"], offset_mode=a["probe_offset"],
                                 canary_npz=a.get("canary_npz"))
     else:
-        ds = build_dataset(a["n_train"], a["n_val"], a["n_test"], a["probes_per_tier"], tiers,
+        ds = build_dataset(a["n_train"], n_val, n_test, a["probes_per_tier"], tiers,
                            a["n_nonmember"], a["data_seed"], offset_mode=a["probe_offset"],
                            enrich_k=a.get("enrich_k"), enrich_factor=a.get("enrich_factor", 1.0))
     if is_nt:
@@ -109,6 +110,40 @@ def _nt_vocab(size: str):
 
     from . import nt as ntmod
     return ntmod.NTVocab(_P(ntmod.ROOT) / ntmod.SIZES[size])
+
+
+def _kind_of(a: dict) -> str:
+    """'mlm' or 'ar', from whatever spelling the wrapper that produced this run happened to use.
+
+    `parse_objective` is our backbone's parser and demands "mlm@<rate>"; it raises on the bare
+    "mlm" that pilot2/nt.py writes and on the "causal" that pilot2/dnabert.py writes. Calling it
+    unguarded here meant every released cell died before the decoder ever ran.
+    """
+    obj = a.get("objective")
+    if obj is None:                       # pilot2/hyena.py records no objective; it is causal-only
+        return "ar"
+    if obj in ("causal", "ar"):
+        return "ar"
+    if obj == "mlm":
+        return "mlm"
+    return parse_objective(obj)[0]
+
+
+# The wrappers that hardcode their validation and test split sizes instead of recording them.
+# Guessing here is worse than crashing: real_data.py draws every probe HOST from the windows after
+# n_train + n_val + n_test, so a wrong value silently moves every canary into a window the model
+# never trained on, and the decoder would then report a number for the wrong sequence.
+_HARDCODED_SPLIT = 200
+
+
+def _split_sizes(a: dict):
+    n_val, n_test = a.get("n_val"), a.get("n_test")
+    if n_val is not None and n_test is not None:
+        return n_val, n_test
+    assert "size" not in a, "NT records its split sizes; a missing one means something else is wrong"
+    # dnabert.py, dnabert2.py and hyena.py all pass n_val=n_test=200 and do not write it down
+    return (n_val if n_val is not None else _HARDCODED_SPLIT,
+            n_test if n_test is not None else _HARDCODED_SPLIT)
 
 
 def _span(tok, offset, k_nt):

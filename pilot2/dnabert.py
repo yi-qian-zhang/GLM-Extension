@@ -413,6 +413,13 @@ def main(argv=None):
     ap.add_argument("--mask_nt_rate", type=float, default=None,
                     help="mlm: fix the fraction of HIDDEN NUCLEOTIDES instead (token rate = k * this, capped at 0.9)")
     ap.add_argument("--pool", type=int, default=100)
+    ap.add_argument("--keep_ckpt", action="store_true",
+                    help="keep the fine-tuned weights instead of deleting them after scoring, and "
+                         "write final.pt. Needed because the search-based decoder in "
+                         "pilot2.recon_audit runs hundreds of forward passes per probe and so cannot "
+                         "be applied to a run that kept only its scores. Until today no released "
+                         "masked checkpoint had ever been asked with that decoder, which is the "
+                         "gap this closes.")
     ap.add_argument("--stride", type=int, default=3, help="score every stride-th nucleotide of the probe")
     ap.add_argument("--save_epochs", default="1,3,8,15,30")
     ap.add_argument("--snapshot_probes", type=int, default=10, help="probes per tier scored at snapshots (all at the end)")
@@ -476,10 +483,13 @@ def main(argv=None):
     sc["downstream"] = DS(model)
     (out_dir / "scores_final.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
     print(f"[k={args.k} s{args.seed}] final floor {sc['floors'][0]['bits_per_nt_mean']:.3f} ({sc['score_sec']:.0f}s)", flush=True)
+    if args.keep_ckpt:
+        # before the loop below, which reloads earlier snapshots over these weights
+        torch.save(model.state_dict(), out_dir / "final.pt")
     for e in save_epochs:
         ck = out_dir / f"ep{e}.pt"
         if not ck.exists() or e == args.epochs:
-            if ck.exists():
+            if ck.exists() and not args.keep_ckpt:
                 ck.unlink()
             continue
         model.load_state_dict(torch.load(ck, map_location=device)); model.eval()
@@ -489,7 +499,8 @@ def main(argv=None):
         s2["downstream"] = DS(model)
         (out_dir / f"scores_ep{e}.json").write_text(json.dumps(s2, indent=1), encoding="utf-8")
         print(f"[k={args.k} s{args.seed}] ep{e} floor {s2['floors'][0]['bits_per_nt_mean']:.3f} ({s2['score_sec']:.0f}s)", flush=True)
-        ck.unlink()
+        if not args.keep_ckpt:
+            ck.unlink()
     print(f"[k={args.k} s{args.seed}] done in {time.time() - t0:.0f}s -> {out_dir}", flush=True)
     return 0
 

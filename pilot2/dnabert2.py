@@ -333,12 +333,9 @@ def main(argv=None):
     ap.add_argument("--mask_rate", type=float, default=0.15, help="mlm: fraction of TOKENS masked")
     ap.add_argument("--pool", type=int, default=100)
     ap.add_argument("--keep_ckpt", action="store_true",
-                    help="keep the fine-tuned weights instead of deleting them after scoring, and "
-                         "write final.pt. Needed because the search-based decoder in "
-                         "pilot2.recon_audit runs hundreds of forward passes per probe and so cannot "
-                         "be applied to a run that kept only its scores. Until today no released "
-                         "masked checkpoint had ever been asked with that decoder, which is the "
-                         "gap this closes.")
+                    help="accepted for compatibility and now a no-op: weights are kept by default")
+    ap.add_argument("--drop_ckpt", action="store_true",
+                    help="delete ep<N>.pt after scoring and skip final.pt. NOT the default any more: keeping checkpoints is now the default: /data has 5.3 TiB free, our own snapshots are 56 MiB each and a 250M released one is about 1 GiB, and keeping them is what lets the search-based decoder in pilot2.recon_audit be pointed at any round of a finished run instead of only at its last one. That is how the extraction-versus-training-round curve gets measured without retraining anything.")
     ap.add_argument("--save_epochs", default="1,3,8,15,30")
     ap.add_argument("--snapshot_probes", type=int, default=10)
     ap.add_argument("--score_epoch0", action="store_true")
@@ -396,13 +393,13 @@ def main(argv=None):
     sc["downstream"] = DS(model)
     (out_dir / "scores_final.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
     print(f"[bpe s{args.seed}] final floor {sc['floors'][0]['bits_per_nt_mean']:.3f} ({sc['score_sec']:.0f}s)", flush=True)
-    if args.keep_ckpt:
+    if not args.drop_ckpt:
         # before the loop below, which reloads earlier snapshots over these weights
         torch.save(model.state_dict(), out_dir / "final.pt")
     for e in save_epochs:
         ck = out_dir / f"ep{e}.pt"
         if not ck.exists() or e == args.epochs:
-            if ck.exists() and not args.keep_ckpt:
+            if ck.exists() and args.drop_ckpt:
                 ck.unlink()
             continue
         model.load_state_dict(torch.load(ck, map_location=device)); model.eval()
@@ -412,7 +409,7 @@ def main(argv=None):
         s2["downstream"] = DS(model)
         (out_dir / f"scores_ep{e}.json").write_text(json.dumps(s2, indent=1), encoding="utf-8")
         print(f"[bpe s{args.seed}] ep{e} floor {s2['floors'][0]['bits_per_nt_mean']:.3f} ({s2['score_sec']:.0f}s)", flush=True)
-        if not args.keep_ckpt:
+        if args.drop_ckpt:
             ck.unlink()
     print(f"[bpe s{args.seed}] done in {time.time() - t0:.0f}s -> {out_dir}", flush=True)
     return 0

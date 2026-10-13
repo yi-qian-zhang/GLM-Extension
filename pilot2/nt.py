@@ -185,10 +185,9 @@ def main(argv=None):
     ap.add_argument("--gpu", type=int, default=0)
     ap.add_argument("--save_epochs", default="1,3,8,15,30,50")
     ap.add_argument("--save_ckpt", action="store_true",
-                    help="write the fine-tuned weights beside the scores, so the search-based "
-                         "decoder in pilot2.recon_audit can be run on a RELEASED checkpoint. The "
-                         "95-100%% reconstruction result is so far only measured on our own "
-                         "from-scratch backbone, which is the first thing a reviewer will ask about.")
+                    help="accepted for compatibility and now a no-op: weights are kept by default")
+    ap.add_argument("--no_save_ckpt", action="store_true",
+                    help="do not write the fine-tuned weights. NOT the default any more: keeping checkpoints is now the default: /data has 5.3 TiB free, our own snapshots are 56 MiB each and a 250M released one is about 1 GiB, and keeping them is what lets the search-based decoder in pilot2.recon_audit be pointed at any round of a finished run instead of only at its last one. That is how the extraction-versus-training-round curve gets measured without retraining anything.")
     ap.add_argument("--score_epoch0", action="store_true")
     ap.add_argument("--out", default="outputs/nt")
     args = ap.parse_args(argv)
@@ -257,7 +256,7 @@ def main(argv=None):
             sc["epoch"] = epoch + 1
             (out_dir / f"scores_ep{epoch+1}.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
             print(f"[{name}] ep{epoch+1} floor {sc['floors'][0]['bits_per_nt_mean']:.4f}", flush=True)
-            if args.save_ckpt:
+            if not args.no_save_ckpt:
                 torch.save(model.hf.state_dict(), out_dir / f"ckpt_ep{epoch+1}.pt")
     log.close()
     model.eval()
@@ -265,7 +264,7 @@ def main(argv=None):
                    floor_n=args.floor_n, offset_mode=args.probe_offset)
     sc.update(epoch=args.epochs, n_params=n_params, total_sec=time.time() - t0)
     (out_dir / "scores_final.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
-    if args.save_ckpt:
+    if not args.no_save_ckpt:
         torch.save(model.hf.state_dict(), out_dir / "final.pt")
     print(f"[{name}] done in {time.time()-t0:.0f}s -> {out_dir}", flush=True)
     return 0

@@ -70,7 +70,10 @@ def main(argv=None):
                     help="fixed: every probe copy at nt 96 (token-aligned); random: each copy at a random offset")
     ap.add_argument("--pos_enc", default="abs", choices=["abs", "rope"],
                     help="abs: learned absolute position embedding; rope: rotary (relative) positions")
-    ap.add_argument("--keep_snapshots", action="store_true", help="keep ep<N>.pt after scoring (default: delete; disk is shared)")
+    ap.add_argument("--keep_snapshots", action="store_true",
+                    help="accepted for compatibility and now a no-op: snapshots are kept by default")
+    ap.add_argument("--drop_snapshots", action="store_true",
+                    help="delete ep<N>.pt after scoring. NOT the default any more -- keeping checkpoints is now the default: /data has 5.3 TiB free, our own snapshots are 56 MiB each and a 250M released one is about 1 GiB, and keeping them is what lets the search-based decoder in pilot2.recon_audit be pointed at any round of a finished run instead of only at its last one. That is how the extraction-versus-training-round curve gets measured without retraining anything.")
     args = ap.parse_args(argv)
     if args.smoke:
         args.n_train, args.n_val, args.n_test = 400, 64, 64
@@ -156,7 +159,7 @@ def main(argv=None):
             (out_dir / f"scores_ep{e}.json").write_text(json.dumps(sc, indent=1), encoding="utf-8")
             fl = sc["floors"][0]["bits_per_nt_mean"]
             print(f"[{name}] snapshot ep{e}: floor {fl:.4f}  ({sc['score_sec']:.0f}s)", flush=True)
-            if not args.keep_snapshots:
+            if args.drop_snapshots:
                 ck.unlink()
 
 

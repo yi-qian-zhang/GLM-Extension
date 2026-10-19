@@ -37,6 +37,7 @@ import argparse
 import json
 import math
 import re
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -228,12 +229,21 @@ def target_surprise(model, tok, kind, probe: Probe, host, device, k_nt=48, offse
 
 @torch.no_grad()
 def extract_icm(model, tok, kind, probe: Probe, host, device, k_nt=48, offset=PROBE_OFFSET,
-                sweeps: int = 6, init: str = "confidence", restarts: int = 1):
+                sweeps: int = 6, init: str = "confidence", restarts: int = 1, chunk: int = 64):
     """Iterated conditional modes: re-mask ONE target token at a time, sweep to a fixed point.
 
     The conditional used here (1 of ~48 tokens masked, the rest at their current values) is the one
     the model was trained on and the one the surprise and recognition rulers read, which neither
     shipped extraction protocol ever enters. Returns None for causal models.
+
+    The restarts run as one batch. They are independent and follow the same schedule, so the only
+    thing that changed is how many forward passes it takes: one per (position, sweep, chunk)
+    instead of one per (position, sweep, restart). Everything the function returns is unchanged --
+    the random initialisations are still drawn per restart from the same per-probe seeds in the
+    same order, the sweep is still Gauss-Seidel within a pass (position p sees p-1 already updated
+    in this pass), and the per-restart sweep counts, scores and Hamming distances are still
+    reported individually. `chunk` only bounds the batch so the logits tensor stays small; it does
+    not affect any result.
     """
     if kind == "ar":
         return None
@@ -260,6 +270,7 @@ def extract_icm(model, tok, kind, probe: Probe, host, device, k_nt=48, offset=PR
             todo.append(pos)
 
     def masked_logits(xb, pos):
+        """Single-row conditional, used by the leave-one-out probe below."""
         keep = xb[0, pos + 1].clone()
         xb[0, pos + 1] = tok.mask_id
         with torch.autocast("cuda", dtype=torch.bfloat16):
@@ -269,58 +280,88 @@ def extract_icm(model, tok, kind, probe: Probe, host, device, k_nt=48, offset=PR
         m = allowed(pos)
         return lc.masked_fill(~m, float("-inf")) if m is not None else lc
 
-    def sweep(xb):
-        """Re-mask one target token at a time and take its mode, until nothing changes."""
-        used = 0
-        for _ in range(sweeps):
-            changed = 0
-            used += 1
-            for pos in todo:
-                new_tok = content[int(masked_logits(xb, pos).argmax())]
-                changed += int(new_tok.item() != xb[0, pos + 1].item())
-                xb[0, pos + 1] = new_tok
-            if changed == 0:
-                break
-        return used
+    # Masks and admissible index lists depend only on the position, so they are built once rather
+    # than per restart; `inv` turns a vocabulary id back into its row in `content` without the
+    # 4096-wide comparison and device sync the inner loop used to pay on every single step.
+    masks = {pos: allowed(pos) for pos in todo}
+    inv = torch.full((int(content.max()) + 1,), -1, dtype=torch.long, device=device)
+    inv[content] = torch.arange(len(content), device=device)
 
-    def pseudo_ll(xb):
-        """Sum of log2 p(token | all others) over the target, computable WITHOUT the truth.
+    def masked_logits_batch(XB, pos):
+        """(R, |content|) conditional for every restart at once."""
+        keep = XB[:, pos + 1].clone()
+        XB[:, pos + 1] = tok.mask_id
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            out = model(XB)[:, pos + 1].float()
+        XB[:, pos + 1] = keep
+        lc = out[:, content]
+        m = masks[pos]
+        return lc.masked_fill(~m, float("-inf")) if m is not None else lc
 
-        This is what lets the attack choose between fixed points. Without it, restarts would only
-        be an oracle number, because an attacker cannot ask which reconstruction is correct.
-        """
-        tot = 0.0
+    R = max(1, restarts)
+    XB = xb0.repeat(R, 1)
+    if R > 1:                                        # admissible choices, per position, once
+        adm = {}
         for pos in todo:
-            lp = F.log_softmax(masked_logits(xb, pos).float(), dim=-1) / math.log(2.0)
-            tot += float(lp[int((content == xb[0, pos + 1]).nonzero()[0, 0])])
-        return tot
+            m = masks[pos]
+            adm[pos] = (torch.arange(len(content)) if m is None
+                        else torch.nonzero(m.cpu())[:, 0])
+    # restart 0 is the published initialisation: one joint pass over the all-masked row
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        joint = model(xb0)[0].float()
+    for pos in todo:
+        lc = joint[pos + 1][content]
+        m = masks[pos]
+        if m is not None:
+            lc = lc.masked_fill(~m, float("-inf"))
+        XB[0, pos + 1] = content[int(lc.argmax())]
+    for r in range(1, R):                            # random admissible starts, seeded per probe
+        g = torch.Generator(device="cpu").manual_seed(1000 * int(probe.probe_id) + r)
+        for pos in todo:
+            idx = adm[pos]
+            XB[r, pos + 1] = content[int(idx[torch.randint(len(idx), (1,), generator=g)])]
 
-    def read_out(xb):
-        pred_nt = tok.decode_t(xb[0, start + 1:end + 1][None])[0][start_nt - lo:end_nt - lo]
-        return pred_nt, int((pred_nt != truth_nt).sum())
+    # Sweep every restart together. A restart that has reached a fixed point cannot move again, so
+    # carrying it through the remaining passes changes nothing; only its reported sweep count has
+    # to be the pass at which it first stopped moving, which is tracked per row.
+    used = torch.full((R,), sweeps, dtype=torch.long, device=device)
+    settled = torch.zeros(R, dtype=torch.bool, device=device)
+    last, clean = {}, torch.zeros(R, dtype=torch.bool, device=device)
+    for s in range(sweeps):
+        changed = torch.zeros(R, dtype=torch.bool, device=device)
+        for pos in todo:
+            lc = torch.cat([masked_logits_batch(XB[i:i + chunk], pos)
+                            for i in range(0, R, chunk)], 0)
+            new_tok = content[lc.argmax(-1)]
+            changed |= new_tok != XB[:, pos + 1]
+            XB[:, pos + 1] = new_tok
+            last[pos] = lc
+        clean = ~changed
+        used = torch.where(clean & ~settled, torch.full_like(used, s + 1), used)
+        settled |= clean
+        if bool(settled.all()):                      # the loop's only host sync, once per pass
+            break
 
-    results = []
-    for r in range(max(1, restarts)):
-        xb = xb0.clone()
-        if r == 0:                                   # the published initialisation: one joint pass
-            with torch.autocast("cuda", dtype=torch.bfloat16):
-                logits = model(xb)[0].float()
-            for pos in todo:
-                lc = logits[pos + 1][content]
-                m = allowed(pos)
-                if m is not None:
-                    lc = lc.masked_fill(~m, float("-inf"))
-                xb[0, pos + 1] = content[int(lc.argmax())]
-        else:                                        # a random admissible start, seeded per probe
-            g = torch.Generator(device="cpu").manual_seed(1000 * int(probe.probe_id) + r)
-            for pos in todo:
-                m = allowed(pos)
-                idx = torch.arange(len(content)) if m is None else torch.nonzero(m.cpu())[:, 0]
-                xb[0, pos + 1] = content[int(idx[torch.randint(len(idx), (1,), generator=g)])]
-        used = sweep(xb)
-        pred_nt, ham_r = read_out(xb)
-        results.append({"score": pseudo_ll(xb), "ham": ham_r, "exact": ham_r == 0,
-                        "sweeps": used, "pred": decode(pred_nt.cpu().numpy())})
+    # A pass that changed nothing left the state it scored identical to the final state, so its
+    # logits are exactly what the pseudo-likelihood needs and the extra pass can be skipped.
+    if not bool(clean.all()):
+        for pos in todo:
+            last[pos] = torch.cat([masked_logits_batch(XB[i:i + chunk], pos)
+                                   for i in range(0, R, chunk)], 0)
+    # float64, because the pre-batching code summed these per-position terms as Python floats:
+    # accumulating the same float32 values in float32 instead moved the total by ~1e-7 relative,
+    # which is enough to reorder two restarts whose pseudo-likelihoods are nearly tied.
+    score = torch.zeros(R, dtype=torch.float64, device=device)
+    for pos in todo:
+        lp = F.log_softmax(last[pos], dim=-1) / math.log(2.0)
+        score += lp.gather(1, inv[XB[:, pos + 1]].view(-1, 1)).squeeze(1).double()
+
+    pred_all = tok.decode_t(XB[:, start + 1:end + 1])[:, start_nt - lo:end_nt - lo]
+    ham_all = (pred_all != truth_nt).sum(1)
+    score_l, ham_l = score.tolist(), ham_all.tolist()
+    used_l, pred_l = used.tolist(), pred_all.cpu().numpy()
+    results = [{"score": score_l[r], "ham": int(ham_l[r]), "exact": int(ham_l[r]) == 0,
+                "sweeps": int(used_l[r]), "pred": decode(pred_l[r])} for r in range(R)]
 
     best = max(results, key=lambda d: d["score"])    # the attack's own choice, truth-free
     ham, n_sweeps = best["ham"], best["sweeps"]
@@ -387,6 +428,10 @@ def main(argv=None):
     ap.add_argument("--ckpt", default="final.pt")
     ap.add_argument("--name", default="recon_audit")
     ap.add_argument("--no_icm", action="store_true", help="target surprise only, no ICM decode")
+    ap.add_argument("--chunk", type=int, default=64,
+                    help="restarts per forward pass. Results are algorithmically independent of "
+                         "this, but bf16 picks different kernels per batch shape, so --chunk 1 is "
+                         "the setting that reproduces the pre-batching code's arithmetic exactly.")
     args = ap.parse_args(argv)
     device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     tiers = [int(t) for t in args.tiers.split(",")]
@@ -409,7 +454,8 @@ def main(argv=None):
             per = defaultdict(lambda: defaultdict(list))
             for tier in tiers + [0]:
                 ps = [p for p in ds.probes if p.repetitions == tier][:args.max_probes]
-                for p in ps:
+                for i_p, p in enumerate(ps, 1):
+                    t_probe = time.time()
                     if tier > 0:
                         host, off, hname = ds.train[p.host_rows[0]], p.offsets[0], "train"
                     else:
@@ -418,7 +464,14 @@ def main(argv=None):
                     pre = extract_prefix(model, tok, kind, p, host, device, offset=off)
                     icm = (None if args.no_icm else
                            extract_icm(model, tok, kind, p, host, device, offset=off,
-                                       sweeps=args.sweeps, restarts=args.restarts))
+                                       sweeps=args.sweeps, restarts=args.restarts,
+                                       chunk=args.chunk))
+                    # These cells run for hours and used to print nothing until a tier finished,
+                    # so a stalled run looked exactly like a slow one.
+                    note = "" if icm is None else (
+                        " icm exact" if icm["exact"] else f" icm ham {icm['hamming_nt']}")
+                    print(f"    [{d.name} r={tier}] probe {i_p}/{len(ps)} "
+                          f"{time.time() - t_probe:5.1f}s{note}", flush=True)
                     v = per[tier]
                     v["tgt_bits"].append(ts["target_bits_per_nt"])
                     v["top1"].append(ts["top1_rate"])

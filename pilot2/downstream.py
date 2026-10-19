@@ -79,12 +79,26 @@ class _Backbone(torch.nn.Module):
             nt = torch.from_numpy(np.stack([nt_encode(s) for s in seqs])).to(device)
             h = self.model.hyena(input_ids=hy_encode(nt), return_dict=True).last_hidden_state
             return h[:, 1:].mean(1)
+        if self.kind == "nt":
+            # NT reads <cls> followed by non-overlapping 6-mers, which is how nt.py builds
+            # its training batches and how the scorers call it; the row is trimmed to a
+            # whole number of 6-mers because the vocabulary has no partial-k-mer token.
+            k = self.voc.k
+            arr = np.stack([nt_encode(s) for s in seqs])
+            arr = arr[:, : (arr.shape[1] // k) * k]
+            ids = self.voc.encode_t(torch.from_numpy(arr).to(device))
+            cls = torch.full((ids.shape[0], 1), self.voc.bos_id, dtype=ids.dtype, device=device)
+            ids = torch.cat([cls, ids], 1)
+            h = self.model.hf(input_ids=ids, output_hidden_states=True).hidden_states[-1]
+            return h[:, 1:].mean(1)                      # drop <cls>; no padding in these rows
         raise ValueError(self.kind)
 
     @property
     def d_model(self):
         if self.kind == "hyena":
             return self.model.config.d_model
+        if self.kind == "nt":
+            return self.model.hf.config.hidden_size      # NTModel wraps the HF model
         return self.model.config.hidden_size
 
 

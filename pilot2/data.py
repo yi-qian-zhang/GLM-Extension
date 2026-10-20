@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -22,10 +23,34 @@ import torch
 PAD, A, C, G, T, MASK, BOS = 0, 1, 2, 3, 4, 5, 6
 VOCAB_SIZE = 7
 NUC_IDS = torch.tensor([A, C, G, T])
-WINDOW = 288
+# 288 is the window every result so far was produced at, and it stays the default. It is
+# read from the environment because several modules do `from .data import WINDOW`, which
+# binds the value at import time -- setting it afterwards would leave each module with a
+# different idea of the window. An env var is fixed before the interpreter starts, so every
+# module agrees. 288 is divisible by k for k in 1,2,3,4,6 but not 5; PILOT2_WINDOW=300 is
+# divisible by all of 1..6 and exists so the tokenizer curve can include k=5. Each run
+# records its own value in data_meta.json, so a run is never ambiguous after the fact.
+WINDOW = int(os.environ.get("PILOT2_WINDOW", "288"))
 PROBE_LEN = 96
 PROBE_OFFSET = 96
 ENTROPY_BITS_PER_NT = 2.0  # log2(4): uniform iid over {A,C,G,T}
+
+
+def window_of(run_dir) -> int:
+    """The window a finished run was built at, read from its own data_meta.json.
+
+    The analysis tools used to pass a literal 288 when rebuilding a run's tokenizer. That
+    is correct for every run made before PILOT2_WINDOW existed and silently wrong for any
+    run made at another window: the tokenizer would be built with the wrong slot count and
+    every probe offset would resolve somewhere else, with no error raised. Falls back to
+    288 for older runs, which is the window they were in fact built at.
+    """
+    f = Path(run_dir) / "data_meta.json"
+    if f.exists():
+        w = json.loads(f.read_text(encoding="utf-8")).get("window")
+        if w:
+            return int(w)
+    return 288
 
 _ENC = {"A": A, "C": C, "G": G, "T": T}
 _DEC = {A: "A", C: "C", G: "G", T: "T", MASK: "?", BOS: "^", PAD: "_"}

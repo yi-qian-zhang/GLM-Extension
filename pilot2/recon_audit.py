@@ -45,7 +45,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, Probe, decode, random_dna
+from .data import PROBE_LEN, PROBE_OFFSET, WINDOW, Probe, decode, random_dna, window_of
 from .model import Backbone
 from .real_data import DATA_PATHS, build_real_dataset
 from .score import _cover, _kmer_letters, extract_infill, extract_prefix
@@ -72,7 +72,7 @@ def rebuild(d: Path, device, ckpt="final.pt"):
     a = json.loads((d / "args.json").read_text(encoding="utf-8"))
     is_nt = "size" in a                  # a released Nucleotide Transformer cell, not our backbone
     kind = _kind_of(a)
-    tok = _nt_vocab(a["size"]) if is_nt else get_tokenizer(a["tokenizer"], 288)
+    tok = _nt_vocab(a["size"]) if is_nt else get_tokenizer(a["tokenizer"], window_of(d))
     tiers = tuple(int(t) for t in str(a["tiers"]).split(","))
     n_val, n_test = _split_sizes(a)
     if a.get("data", "synthetic") != "synthetic":

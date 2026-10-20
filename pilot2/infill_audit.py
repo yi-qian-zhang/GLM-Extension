@@ -28,7 +28,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from .data import build_dataset
+from .data import build_dataset, window_of
 from .model import Backbone
 from .real_data import DATA_PATHS, build_real_dataset
 from .score import extract_infill, extract_prefix
@@ -44,7 +44,7 @@ def rebuild(d: Path, device):
     kind, _ = parse_objective(a["objective"])
     if kind == "ar":
         return None
-    tok = get_tokenizer(a["tokenizer"], 288)
+    tok = get_tokenizer(a["tokenizer"], window_of(d))
     tiers = tuple(int(t) for t in str(a["tiers"]).split(","))
     if a.get("data", "synthetic") != "synthetic":
         ds = build_real_dataset(a.get("fasta") or DATA_PATHS[a["data"]], a["n_train"], a["n_val"], a["n_test"],

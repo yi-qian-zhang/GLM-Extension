@@ -43,7 +43,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from .data import PROBE_LEN, Probe, build_dataset, decode
+from .data import PROBE_LEN, Probe, build_dataset, decode, window_of
 from .model import Backbone
 from .real_data import DATA_PATHS, build_real_dataset
 from .score import extract_prefix, rank_probe
@@ -91,7 +91,7 @@ def find_duplicates(train: np.ndarray, tag: np.ndarray, stride: int, max_rows: i
 def rebuild(d: Path, device):
     a = json.loads((d / "args.json").read_text(encoding="utf-8"))
     kind, _ = parse_objective(a.get("objective") or "ar")
-    tok = get_tokenizer(a["tokenizer"], 288)
+    tok = get_tokenizer(a["tokenizer"], window_of(d))
     tiers = tuple(int(t) for t in str(a["tiers"]).split(","))
     if a.get("data", "synthetic") != "synthetic":
         ds = build_real_dataset(a.get("fasta") or DATA_PATHS[a["data"]], a["n_train"], a["n_val"], a["n_test"],

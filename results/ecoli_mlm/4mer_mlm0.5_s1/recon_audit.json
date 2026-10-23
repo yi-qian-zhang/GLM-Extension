@@ -1,0 +1,2892 @@
+{
+ "run": "4mer_mlm0.5_s1",
+ "ckpt": "final.pt",
+ "data": "ecoli",
+ "objective": "mlm@0.5",
+ "tokenizer": "4mer",
+ "seed": 1,
+ "d_model": null,
+ "n_layers": null,
+ "cells": [
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 0,
+   "target": {
+    "target_bits_per_nt": 2.0429398020108542,
+    "target_bits_total": 98.061110496521,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 92,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 39,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAACTGGTGAATGAACTGGAAAATGAACTGGAAAAAAAACTGGAAAA",
+    "truth_nt": "GCGAAGTCTCAGCTAGTACTAGTTCTCCATCTATCATGCGAGCACTGA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 92,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 38,
+    "pred_nt": "GGCGCTGGTGGACTGGCTGGAAGACTGGGCTGAAGACTGGCTGGAAGA",
+    "truth_nt": "GCGAAGTCTCAGCTAGTACTAGTTCTCCATCTATCATGCGAGCACTGA"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 1,
+   "target": {
+    "target_bits_per_nt": 2.0804524471362433,
+    "target_bits_total": 99.86171746253967,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 59,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "ATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "CGTGAATTGCAAGGTCGGAAGCTGGTACTAAACCCACCTGCCTCACTC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 59,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 36,
+    "pred_nt": "AAAAAAAAATTTTTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAATTT",
+    "truth_nt": "CGTGAATTGCAAGGTCGGAAGCTGGTACTAAACCCACCTGCCTCACTC"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 2,
+   "target": {
+    "target_bits_per_nt": 2.0353299528360367,
+    "target_bits_total": 97.69583773612976,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 99,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CCCGCGCCACCGCCCAGACCACCGCCCAGACCAAGCACCAGCAGCAGC",
+    "truth_nt": "GATATATTAACTCCTCACCAGGCGGCGCACTTACACGTGTTTCGCATG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 99,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 33,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "ACCGCACCAACCACCAGACCAACCACGCCACCAACCACGCCACCAACC",
+    "truth_nt": "GATATATTAACTCCTCACCAGGCGGCGCACTTACACGTGTTTCGCATG"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 3,
+   "target": {
+    "target_bits_per_nt": 2.0591732362906137,
+    "target_bits_total": 98.84031534194946,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 20,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 34,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTCACCAGCCAGACCACCAGCAGCGCCACCAGGCCGAGCACCAGCAGC",
+    "truth_nt": "TATCAAAACTGTCCAATCCCCGTATGATCGCCGACGCCCCACTACCCG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 20,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 36,
+    "pred_nt": "CTGGTGGCGCTGCTGGTGCTGCTGCTGGTGCTGGCGCTGGTGGCGCTG",
+    "truth_nt": "TATCAAAACTGTCCAATCCCCGTATGATCGCCGACGCCCCACTACCCG"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 4,
+   "target": {
+    "target_bits_per_nt": 2.0324913561344147,
+    "target_bits_total": 97.5595850944519,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 102,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 30,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "AAGACCCGTTACTCTATTTTTCAAAGATATAATATCGTCTTTTACAGG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 102,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 28,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "TTTTTTTTTTAAAAATTATTTTAAAATTTTTTTTTTTTTTTTAAAAAA",
+    "truth_nt": "AAGACCCGTTACTCTATTTTTCAAAGATATAATATCGTCTTTTACAGG"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 5,
+   "target": {
+    "target_bits_per_nt": 2.1173376391331353,
+    "target_bits_total": 101.6322066783905,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 87,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 40,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TCTGGTGGCTGGCGGCGCTGGTGCTGCTGCTGGTGGCGCTGCTGGTGC",
+    "truth_nt": "ATCTGTGATACCTCTAGTCATCAGATGCCTCTCCGACTTCAGCCGAAC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 87,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 39,
+    "pred_nt": "TGCTGAACATCGACCAGACCATCAACATCACCATCAACCAGACCATCA",
+    "truth_nt": "ATCTGTGATACCTCTAGTCATCAGATGCCTCTCCGACTTCAGCCGAAC"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 6,
+   "target": {
+    "target_bits_per_nt": 2.110383629798889,
+    "target_bits_total": 101.29841423034668,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 127,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 39,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CAAAAATAACAGCAAAATTTTCAGCCAGCTTTTCAGCCAGCGCCACAG",
+    "truth_nt": "TCAATCTTTCGCAGTTGTAGAATATAGAGGGGCCCAAGCTCAGTCCTG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 127,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "TCAATCTTTCGCAGTTGTAGAATATAGAGGGGCCCAAGCTCAGTCCTG"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 7,
+   "target": {
+    "target_bits_per_nt": 2.0839847326278687,
+    "target_bits_total": 100.0312671661377,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 170,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 33,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCCGCCCAGCGCCAGCCACAGCGCCACGCCCAGCCCAGCGCCCAGCGC",
+    "truth_nt": "GCTGCCGAATTAAGATCTTGGGGCACGGGTTGAGGACCCCCAACGGTC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 170,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 39,
+    "seed_exact": false,
+    "seed_hamming_nt": 38,
+    "pred_nt": "AGCAGCACCACCAGCAGCACCACGCCCGCCACCACCAGCAGCACCACC",
+    "truth_nt": "GCTGCCGAATTAAGATCTTGGGGCACGGGTTGAGGACCCCCAACGGTC"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 8,
+   "target": {
+    "target_bits_per_nt": 2.0964716573556266,
+    "target_bits_total": 100.63063955307007,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 68,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 34,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CTGGTTTTGCTGCTGGTGGCGCTGCTGGTGGCCTGGCTGGTGGCCTGG",
+    "truth_nt": "CAGACCTCAATGGTAGGCGTCGCCTAGTAACGTTGTTAGCGCCCGTAT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 68,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "CAGACCTCAATGGTAGGCGTCGCCTAGTAACGTTGTTAGCGCCCGTAT"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 9,
+   "target": {
+    "target_bits_per_nt": 2.0977253516515098,
+    "target_bits_total": 100.69081687927246,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 88,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 36,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "ATATTTTTTTTCTTTTTTTTTTTTTTTTTTTTTTTTTTTTATTTTTTT",
+    "truth_nt": "TGAGACGGTAAAAGGTCAGAATTCGTTCCAATTCTACAAACGCTCTAC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 88,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "TGGCCTGGCTGGTGGCCTGGCTGGTGGCCTGGCTGGTGGCCTGGCTGG",
+    "truth_nt": "TGAGACGGTAAAAGGTCAGAATTCGTTCCAATTCTACAAACGCTCTAC"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 10,
+   "target": {
+    "target_bits_per_nt": 1.8982945481936138,
+    "target_bits_total": 91.11813831329346,
+    "top1_rate": 0.08333333333333333,
+    "n_steps": 12,
+    "exact_upper_bound": 1.1215665478461501e-13
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 152,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 32,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCTGGCTGTGCTGCTGGCTGTGGCGCTGCTGGTTATGCTGCTGGTGGC",
+    "truth_nt": "CCCCGGCGGTGAGCTGAAAGTTGAATGGACCGTTGACTTAGTATCTTT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 152,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "GCTGCTGGTGCTGGTGCTGGTGCTGCTGCTGGTGCTGGTGCTGGTGCT",
+    "truth_nt": "CCCCGGCGGTGAGCTGAAAGTTGAATGGACCGTTGACTTAGTATCTTT"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 11,
+   "target": {
+    "target_bits_per_nt": 2.0768520832061768,
+    "target_bits_total": 99.68889999389648,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 170,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCTCTTCCAGTTCATCTTCCAGCAGCTCTTCTTCGCCATCTTCTTCCA",
+    "truth_nt": "CCGCTCTGTTCTACGTCATGCGGCTCTCCGCAGTGGGTAATTTGAGTA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 170,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 36,
+    "pred_nt": "GCTCTTCTTCCAGCTCTTCTTCCAGCATCACTTCGCCATCTTCTTCCA",
+    "truth_nt": "CCGCTCTGTTCTACGTCATGCGGCTCTCCGCAGTGGGTAATTTGAGTA"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 12,
+   "target": {
+    "target_bits_per_nt": 2.0197870954871178,
+    "target_bits_total": 96.94978058338165,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 115,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 36,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "ACCAGCAGCAAAACTTCCAGCTTTTCTTCCAGCTTTTCCAGCAGCATC",
+    "truth_nt": "TGCAAGATGCATTCCTTGCGTGCTTACCGCCTGGACTGGCCGGACCGG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 115,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 39,
+    "pred_nt": "TTTTTAAAATTTTTTTTAAAATTTTTTTTAAAATTTTTTTTAAAATTT",
+    "truth_nt": "TGCAAGATGCATTCCTTGCGTGCTTACCGCCTGGACTGGCCGGACCGG"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 13,
+   "target": {
+    "target_bits_per_nt": 2.164331247409185,
+    "target_bits_total": 103.88789987564087,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 113,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 36,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CGCCCAGCTGGCCAGCAGCGCGACCAGCAGCGCCACCAGCAGCGCCAC",
+    "truth_nt": "AATCTATGACTGCCAGTACACTCAACAATATGAACCGATTTGAGTGAC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 113,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 36,
+    "pred_nt": "TTCCAGCTCCACTTCCAGCAGCACCAGCAGCTCCACCAGCAGCGCCAC",
+    "truth_nt": "AATCTATGACTGCCAGTACACTCAACAATATGAACCGATTTGAGTGAC"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 14,
+   "target": {
+    "target_bits_per_nt": 1.9631360173225403,
+    "target_bits_total": 94.23052883148193,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 160,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 33,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "ATAAGTTTTATCGTATAACACTGTCGGTGTGAAGAACGATAGGTGGAC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 160,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 33,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "ATAAGTTTTATCGTATAACACTGTCGGTGTGAAGAACGATAGGTGGAC"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 15,
+   "target": {
+    "target_bits_per_nt": 2.1179865499337516,
+    "target_bits_total": 101.66335439682007,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 187,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "ACCGAGCTGCTGGTCGAGCTGCTGGCCGACTGGCTGGCCGACTGGCTG",
+    "truth_nt": "ACGGCCGAAGTCCAAATGTCGCCTACCAATCGAACAATTCCGGGAATA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 187,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "ACCGAGCTGCTGGTCGAGCTGCTGGCCGAGCTGGAAGCCGAGCTGCTG",
+    "truth_nt": "ACGGCCGAAGTCCAAATGTCGCCTACCAATCGAACAATTCCGGGAATA"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 16,
+   "target": {
+    "target_bits_per_nt": 2.1184464395046234,
+    "target_bits_total": 101.68542909622192,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 145,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 33,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "ATCAAAATCAACAGCCAGCTCAACGCCCAGCTCAACCAGCAGCAGCAC",
+    "truth_nt": "GCTGAGCTACAATGACATCTCCTGGTATCGGTAGACGTTGAAAGCGCG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 145,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 29,
+    "seed_exact": false,
+    "seed_hamming_nt": 28,
+    "pred_nt": "ATCCAGCTCAACAGCCAGCTCAACGCCCAGCTCAACGCCCAGCTCAAC",
+    "truth_nt": "GCTGAGCTACAATGACATCTCCTGGTATCGGTAGACGTTGAAAGCGCG"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 17,
+   "target": {
+    "target_bits_per_nt": 2.2090691526730857,
+    "target_bits_total": 106.0353193283081,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 129,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTTCCAGACCAATAATTTTCAGCTTTTTTTCACCATTTTCGCCCAGCT",
+    "truth_nt": "TGAGCTTCCGAATAGGCGGTAAACGGTTGGATTGGGGACACTACTGAT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 129,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 36,
+    "pred_nt": "TTTCCAGACCATTTTCCAGCAGCTCATCCAGCAGCTTTTCGCCCAGCT",
+    "truth_nt": "TGAGCTTCCGAATAGGCGGTAAACGGTTGGATTGGGGACACTACTGAT"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 18,
+   "target": {
+    "target_bits_per_nt": 2.1160018742084503,
+    "target_bits_total": 101.56808996200562,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 49,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CAACGCCAAAAAAAACAGCAAAAAAAACAGCAAAAAAAACGCCAAAAA",
+    "truth_nt": "TCCCGAAAAAGCCCGGATTAGTTGGTGAACGCCGTCGTTTACTTTACC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 49,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "CAGCAGCACCACCAGCAGCACCACCAGCAGCACCACGCCCAGCACCAC",
+    "truth_nt": "TCCCGAAAAAGCCCGGATTAGTTGGTGAACGCCGTCGTTTACTTTACC"
+   }
+  },
+  {
+   "tier": 1,
+   "host": "train",
+   "probe_id": 19,
+   "target": {
+    "target_bits_per_nt": 2.104325532913208,
+    "target_bits_total": 101.00762557983398,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 34,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 33,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TGTGGCTGGCCTGGTGGCTGATCTGGTGGCTGGCCTGGTGGCTGGCCT",
+    "truth_nt": "CGATATTTGCATCGAGCACTGTGGGCCCAGTATTCTAGGATGAGCGGT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 34,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 32,
+    "seed_exact": false,
+    "seed_hamming_nt": 34,
+    "pred_nt": "GGTGGCTGGCCTGGTGGCTGGCCTGGTTATTGGCCTGGTTATTGGCCT",
+    "truth_nt": "CGATATTTGCATCGAGCACTGTGGGCCCAGTATTCTAGGATGAGCGGT"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 40,
+   "target": {
+    "target_bits_per_nt": 1.9984417855739594,
+    "target_bits_total": 95.92520570755005,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 156,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCTGTGGCTGGCGCTGCTGGTGGCTGGCCTGGTGGCGCTGCTGGTGGC",
+    "truth_nt": "TCAGTTCGGATTTTCCAAACTCACAGTTCTAAGGCTCATGTAGAAAGA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 156,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 34,
+    "pred_nt": "CTGGCTGGTGGCGGTGCTGGTGCTGCTGCTGGTGGCGCTGCTGGTGGC",
+    "truth_nt": "TCAGTTCGGATTTTCCAAACTCACAGTTCTAAGGCTCATGTAGAAAGA"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 41,
+   "target": {
+    "target_bits_per_nt": 2.0661555031935372,
+    "target_bits_total": 99.1754641532898,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 2,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 31,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCCCAGAAAATTCATTTTAAAATTTTCTTTAAAATTTTTTTTAAAATT",
+    "truth_nt": "GCCCGGTTCCTAATATCATAAGTAATTTGTGGTTTGTGACAAAGCCTC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 2,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 34,
+    "pred_nt": "CCACCACAGCCAGCCCAACAGCCAGCAGCACAGCCAGCCCAACGCCCA",
+    "truth_nt": "GCCCGGTTCCTAATATCATAAGTAATTTGTGGTTTGTGACAAAGCCTC"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 42,
+   "target": {
+    "target_bits_per_nt": 1.9501163760821025,
+    "target_bits_total": 93.60558605194092,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 140,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 30,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCTGCAGCTCAATTTTCAGCATCACTTCCAGCTCGACTTCCAGCAGCA",
+    "truth_nt": "ATTACCGTCTATTCAGCAGTCAGCTTCATTCCTCGCGTCGCCGGAACT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 140,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "CCAGCAGCTCGACGCCCAGCATCACCAGCAGCTCCACCAGCAGCAGCA",
+    "truth_nt": "ATTACCGTCTATTCAGCAGTCAGCTTCATTCCTCGCGTCGCCGGAACT"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 43,
+   "target": {
+    "target_bits_per_nt": 2.1523506144682565,
+    "target_bits_total": 103.31282949447632,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 117,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 34,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCCCAGCCAGCCAGCGCCACAGCCAGCGCCACGCCCAGCGCCACAGCC",
+    "truth_nt": "TTATAGTACTAGCCAACCTTACCCCAGTTTTAGTCCACTCGATCGGCA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 117,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 34,
+    "pred_nt": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "TTATAGTACTAGCCAACCTTACCCCAGTTTTAGTCCACTCGATCGGCA"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 44,
+   "target": {
+    "target_bits_per_nt": 2.038920750220617,
+    "target_bits_total": 97.8681960105896,
+    "top1_rate": 0.08333333333333333,
+    "n_steps": 12,
+    "exact_upper_bound": 1.1215665478461501e-13
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 96,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "GGTCTTGCCCACAAAACGAGAAGGATTCTCATCTCCTGAGTGGAACCC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 96,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "GGTCTTGCCCACAAAACGAGAAGGATTCTCATCTCCTGAGTGGAACCC"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 45,
+   "target": {
+    "target_bits_per_nt": 2.0199407438437142,
+    "target_bits_total": 96.95715570449829,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 40,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 36,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "ATAACGCCCAGCACCACAGCCAGCAGCACGCCCAGCAGCACCAGCAGC",
+    "truth_nt": "AACATCCCGCGCAACCAGGAAACAGTAGAGAACCCATTTTGGCCGTCT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 40,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 40,
+    "pred_nt": "TTTTTTTTCAGCTTTTTTTTCAGCTTTTTTTTTTTTTTTTTTTTCGCC",
+    "truth_nt": "AACATCCCGCGCAACCAGGAAACAGTAGAGAACCCATTTTGGCCGTCT"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 46,
+   "target": {
+    "target_bits_per_nt": 2.1387659509976706,
+    "target_bits_total": 102.66076564788818,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 50,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCGCGCGCGCGCGCGCGCGCTGCAGCGCCAGCGCCGCCGCCACGCCCA",
+    "truth_nt": "GATCCACACGTTCGAAATGACTCGTCGGCTATCACGATCTTAAGCCAG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 50,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "GCACCACCAGCAGCGCCACAGCCAGCACCACAGCGCCAGCCACAGCGC",
+    "truth_nt": "GATCCACACGTTCGAAATGACTCGTCGGCTATCACGATCTTAAGCCAG"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 47,
+   "target": {
+    "target_bits_per_nt": 2.1186038007338843,
+    "target_bits_total": 101.69298243522644,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 10,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 41,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GAGCGCAAAAAAAAGCTGCTGGCTGGAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "TAGTAACTCACTTCGTCGGGCTGATCAAGTCGTGTTTCGGGTCCTGCC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 10,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "GGCTGGCTGGTGGCCTGGCTGGGGCGCTGGCTGGTGGCCTGGTGGCCT",
+    "truth_nt": "TAGTAACTCACTTCGTCGGGCTGATCAAGTCGTGTTTCGGGTCCTGCC"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 48,
+   "target": {
+    "target_bits_per_nt": 2.067403028408686,
+    "target_bits_total": 99.23534536361694,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 160,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 31,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CAGCATAATTTTCAGCTTTTTTTTCAGCACCACGCCCAGCATAACGCC",
+    "truth_nt": "GACTACTTTTCTCCGGTTTAGTGGTAATTCGAGGATACGAGTCTACGT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 160,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "CAGCACCACGCCCAGCACCACGCCCAGCACCACGCCCAGCACCACGCC",
+    "truth_nt": "GACTACTTTTCTCCGGTTTAGTGGTAATTCGAGGATACGAGTCTACGT"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 49,
+   "target": {
+    "target_bits_per_nt": 2.0420605738957724,
+    "target_bits_total": 98.01890754699707,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 68,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTTTTTTTCGCCATCATTTTCGCCAAAATTTTCAGCCGCCTTTTCGCC",
+    "truth_nt": "ACTCGAACCACGCAACTGGAACTGCCGGATACGAACCTCACTGAGAGA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 68,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 32,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "CCAGCAGCGCCACGCCGCCAGCCACGCCCAGCCGCCCGCCCAGCACCA",
+    "truth_nt": "ACTCGAACCACGCAACTGGAACTGCCGGATACGAACCTCACTGAGAGA"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 50,
+   "target": {
+    "target_bits_per_nt": 1.9514052371184032,
+    "target_bits_total": 93.66745138168335,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 188,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 36,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CTGGTGGCCTGGCTGGCTGGCTGGCTGGCTGGTGGCCTGGCTGGCTGG",
+    "truth_nt": "CGTTTTTCATGCGCGGAGCGGTACCGAAGACACGCATTTTACATAATC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 188,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "TGGCCTGGCTGGGCTGCTGGCTGGCTGGCTGGTGGCCTGGCTGGCTGG",
+    "truth_nt": "CGTTTTTCATGCGCGGAGCGGTACCGAAGACACGCATTTTACATAATC"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 51,
+   "target": {
+    "target_bits_per_nt": 2.1394549310207367,
+    "target_bits_total": 102.69383668899536,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 109,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 42,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTCCTGGTGGCGCTGCTGGTGCTGCTGCTGGTGGCGCTGCTGGTGGCG",
+    "truth_nt": "TTTAACTGCAGCGGCAGCAGGGGCGGAGCATCCAACTCCCAACTAGAT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 109,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 43,
+    "seed_exact": false,
+    "seed_hamming_nt": 42,
+    "pred_nt": "GGCCTGGTGGCGCTGCTGGTGCTGCTGCTGGTGGCGGCGCTGGTGGCC",
+    "truth_nt": "TTTAACTGCAGCGGCAGCAGGGGCGGAGCATCCAACTCCCAACTAGAT"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 52,
+   "target": {
+    "target_bits_per_nt": 2.0463837683200836,
+    "target_bits_total": 98.22642087936401,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 62,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 40,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCGCGACAGCCAGCAGCACGCCCAGCAGCACCAGCAGCAGCACCAGCA",
+    "truth_nt": "TAGAAGTGATAAAGGTAAGAAGGACACTGGGTGAAATGGCTTCTGGCT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 62,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 37,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "CATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "TAGAAGTGATAAAGGTAAGAAGGACACTGGGTGAAATGGCTTCTGGCT"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 53,
+   "target": {
+    "target_bits_per_nt": 2.1520607272783914,
+    "target_bits_total": 103.2989149093628,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 73,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 34,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TCAGCTGCTGGAAAACGCCGAAGATGAGCTGGAAGTGCTGCTGCTGGA",
+    "truth_nt": "TCCCTGGACGATAGTGATTAGCGGATTACCGTCAAAGTATCCCTTGCA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 73,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "TCACCAGCAGCGCCACCAGCAGCATCACCAGCAGCTCAACCAGCAGCA",
+    "truth_nt": "TCCCTGGACGATAGTGATTAGCGGATTACCGTCAAAGTATCCCTTGCA"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 54,
+   "target": {
+    "target_bits_per_nt": 1.9728284974892933,
+    "target_bits_total": 94.69576787948608,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 48,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTTTTTTTAAAATTTTAAAAAAAATTTTTTTTAAAATTTTAAAAAAAA",
+    "truth_nt": "CGTGTGGCGCAATTGAATCCGGCTCTGCCGGTAGGAGCGCGTAGACGC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 48,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 38,
+    "pred_nt": "CCGCCGCCACCAGCCACCAGACCAGCCACCAGATCAGCCACGCCACCA",
+    "truth_nt": "CGTGTGGCGCAATTGAATCCGGCTCTGCCGGTAGGAGCGCGTAGACGC"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 55,
+   "target": {
+    "target_bits_per_nt": 2.0713634888331094,
+    "target_bits_total": 99.42544746398926,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 38,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 37,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "TTGACCGTTGAGCGTCCATGATTTGCCGAACAGATCCATCAATCCCGC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 38,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 39,
+    "pred_nt": "TGCAGCGCCACGCCCGCCCTGGCAGCCTGGATCACCAGGCCGATCATT",
+    "truth_nt": "TTGACCGTTGAGCGTCCATGATTTGCCGAACAGATCCATCAATCCCGC"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 56,
+   "target": {
+    "target_bits_per_nt": 2.0587877531846366,
+    "target_bits_total": 98.82181215286255,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 92,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "TGTCCTCGTATGGGCTGGAGGGCCGAAATCTCACCTGCAGCCCGAATA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 92,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 38,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "TGTCCTCGTATGGGCTGGAGGGCCGAAATCTCACCTGCAGCCCGAATA"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 57,
+   "target": {
+    "target_bits_per_nt": 2.0610173443953195,
+    "target_bits_total": 98.92883253097534,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 0,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CCAGTTCATTCACTTCATCATTCACTTCTTCATTTTCTTCTTCAATCA",
+    "truth_nt": "AGTCGTTCATTAGTTATGATGGGCCTTTCCTCGAGAGAAGCTGCTACT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 0,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "AGTCGTTCATTAGTTATGATGGGCCTTTCCTCGAGAGAAGCTGCTACT"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 58,
+   "target": {
+    "target_bits_per_nt": 2.1219313939412436,
+    "target_bits_total": 101.85270690917969,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 138,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 37,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CGAACACCAGCAGCATCACGCCCAGCATCACGCCCAGCATCACCAGCA",
+    "truth_nt": "GGTTCGTTTAAACGCTCTCTAGTGGCTATCATTAGGGAACGGGGCGGG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 138,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "CAACCACGCCCAGCACCACGCCCAGCACCACGCCCAGCACCACCAGCA",
+    "truth_nt": "GGTTCGTTTAAACGCTCTCTAGTGGCTATCATTAGGGAACGGGGCGGG"
+   }
+  },
+  {
+   "tier": 4,
+   "host": "train",
+   "probe_id": 59,
+   "target": {
+    "target_bits_per_nt": 2.150333881378174,
+    "target_bits_total": 103.21602630615234,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 130,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 33,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCTCAACTGGGCTGTGCTGCTGCTGGTGGCGCTGCTGGTGGCGGCGCT",
+    "truth_nt": "AATCATAAGACGCATCATCGGACTACAGTGACCGAGTAGGGCAGTCTG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 130,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 37,
+    "seed_exact": false,
+    "seed_hamming_nt": 38,
+    "pred_nt": "CGTGCACTGGCTGGTGCTGCTGCTGGTGGCGCTGCTGGCTGGCTGGCT",
+    "truth_nt": "AATCATAAGACGCATCATCGGACTACAGTGACCGAGTAGGGCAGTCTG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 80,
+   "target": {
+    "target_bits_per_nt": 2.2530232866605124,
+    "target_bits_total": 108.14511775970459,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 33,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 40,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CAGCAGCAGCACCATCCAGAGCAGCCACAGCACCAGCCACAGCCCGCG",
+    "truth_nt": "TTTTACTCTAGGGGCAGCATAGCGGGTATGGACTTGGCGTCAATAAGG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 33,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 45,
+    "seed_exact": false,
+    "seed_hamming_nt": 42,
+    "pred_nt": "CAGCAGCAGCACCAGCAGCGCCACCAGCAGCAGCACTTCCAGCCCGCC",
+    "truth_nt": "TTTTACTCTAGGGGCAGCATAGCGGGTATGGACTTGGCGTCAATAAGG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 81,
+   "target": {
+    "target_bits_per_nt": 2.16488050421079,
+    "target_bits_total": 103.91426420211792,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 138,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CGGCCATTTTCAGCGCCACCAGCAGCGCCACGCCCAGCGCCAGCCACA",
+    "truth_nt": "GCCATTCGCAGGCCCAATTGTGCTCTAGCGGGACAGGTACCCCGGATG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 138,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "TCTCTTCTTCCAGCTCTTCTTCCAGCTCTTCTTCCAGCTCTTCTTCCA",
+    "truth_nt": "GCCATTCGCAGGCCCAATTGTGCTCTAGCGGGACAGGTACCCCGGATG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 82,
+   "target": {
+    "target_bits_per_nt": 2.126989463965098,
+    "target_bits_total": 102.0954942703247,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 174,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GAGCTGGCTGCTGGTGGCGGCGCTGGTGGCCTGGCTGGCGCTCTGGCT",
+    "truth_nt": "CTCCTTTTCCTGAGCGGTATTCCCTGAACCAGCCATAGTGCTAACAAG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 174,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 34,
+    "pred_nt": "GGCGCTGCTGCTGGTGGCCTGGCTGGTGGCCTGGCTGGTGGCCTGGCT",
+    "truth_nt": "CTCCTTTTCCTGAGCGGTATTCCCTGAACCAGCCATAGTGCTAACAAG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 83,
+   "target": {
+    "target_bits_per_nt": 2.0154633124669394,
+    "target_bits_total": 96.74223899841309,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 108,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 34,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GGCGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "TGACCTACAGCCGATCGCATTACTTAAACGTGTACGGGGTAAATTATG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 108,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "TGACCTACAGCCGATCGCATTACTTAAACGTGTACGGGGTAAATTATG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 84,
+   "target": {
+    "target_bits_per_nt": 2.076460917790731,
+    "target_bits_total": 99.67012405395508,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 155,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 37,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "TAGCTCCAACAACTTTGAAGCAGTGTCTCGCGGGGGACCTGGTGAACT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 155,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "ATTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTAAAAAAA",
+    "truth_nt": "TAGCTCCAACAACTTTGAAGCAGTGTCTCGCGGGGGACCTGGTGAACT"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 85,
+   "target": {
+    "target_bits_per_nt": 2.0132735123236976,
+    "target_bits_total": 96.63712859153748,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 43,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 39,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CCGCCCCAGAAAACAGCCGCCCAGCCAGCCCAGCAGCCAGCCGCCCAG",
+    "truth_nt": "ACGGCGTGACGCCTCTGTCTTAACGCTTGATTGTGATAGGGTTATAAG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 43,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 39,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "ACGGCGTGACGCCTCTGTCTTAACGCTTGATTGTGATAGGGTTATAAG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 86,
+   "target": {
+    "target_bits_per_nt": 2.0459101100762687,
+    "target_bits_total": 98.20368528366089,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 60,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 37,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CCAGATCATTTTTTTTCCAGTTTTTTTTATCATTTTTTTTTTTTTTTT",
+    "truth_nt": "GAGGGCACAGGCCAGATCTCATTGTATTTTACATCGCGTACGTGCGAA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 60,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 31,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "TGGAGCTGCAGCAAGAGCTGCAGCTCGAGCTGGAAGCCGAGCTGGAAG",
+    "truth_nt": "GAGGGCACAGGCCAGATCTCATTGTATTTTACATCGCGTACGTGCGAA"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 87,
+   "target": {
+    "target_bits_per_nt": 2.094466288884481,
+    "target_bits_total": 100.53438186645508,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 33,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAATTTTTTTTAAAATTTTTTTTAAAATTTTAAAAAAAATTTTAAAAA",
+    "truth_nt": "TGCGCTGATGCATGAAGGATTCGGAAGCCCAAGTTACATCAACATTAG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 33,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 32,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "AAGTCGACGCCGAAGTCGAGCTGGAAGTCGAGCTGGAAGTCAAGCTGG",
+    "truth_nt": "TGCGCTGATGCATGAAGGATTCGGAAGCCCAAGTTACATCAACATTAG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 88,
+   "target": {
+    "target_bits_per_nt": 1.9362903932730358,
+    "target_bits_total": 92.94193887710571,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 158,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 36,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CCAAAACAGCAAAATTTTCAGCAAAAAAAACAGCATAAAAAACAGCAT",
+    "truth_nt": "GTGCATTGCGGCATAAAACAGATTTGTAATCGGAACCATGCTACGAGC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 158,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 32,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "GCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "GTGCATTGCGGCATAAAACAGATTTGTAATCGGAACCATGCTACGAGC"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 89,
+   "target": {
+    "target_bits_per_nt": 2.061924817661444,
+    "target_bits_total": 98.97239124774933,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 127,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "ATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "ATATTAGACTTCCGTTAGGCGACCTGGCAGCACATATACACTATGAGC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 127,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 40,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "TCTGGTGGCCTGGTGGCCTGGCTGGTGGCCTGGCTGGTGGCCTGGCTG",
+    "truth_nt": "ATATTAGACTTCCGTTAGGCGACCTGGCAGCACATATACACTATGAGC"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 90,
+   "target": {
+    "target_bits_per_nt": 1.9338366587956746,
+    "target_bits_total": 92.82415962219238,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 112,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CAGCAGCACCAGCAGCGCCACCAGCAGCGCCACCAGCAGCACCACGCC",
+    "truth_nt": "TCCATCGTACGATATTGCTTATCTACCAACAGCGCATCATATCAGCCA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 112,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "CAGCACCACGCCCAGCGCCACCAGCAGCGCCACCAGCAGCACCACCAG",
+    "truth_nt": "TCCATCGTACGATATTGCTTATCTACCAACAGCGCATCATATCAGCCA"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 91,
+   "target": {
+    "target_bits_per_nt": 2.1153002878030143,
+    "target_bits_total": 101.53441381454468,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 50,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 39,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTAAAAAAAATTTTAAAAAAAATTTTAAAAAAAATTTTAAAAAAAATT",
+    "truth_nt": "CTTCTCAAGCTGGGGGTGCAGGGCGAGGGTATACAATGCACCGCTTCG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 50,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 39,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTAAA",
+    "truth_nt": "CTTCTCAAGCTGGGGGTGCAGGGCGAGGGTATACAATGCACCGCTTCG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 92,
+   "target": {
+    "target_bits_per_nt": 2.1319482624530792,
+    "target_bits_total": 102.3335165977478,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 34,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 39,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AACTGGGCTGAAAACTGGGCTGTGAACTGGGCTGTGAAGCTGGCTGTG",
+    "truth_nt": "ACATCTATAGCTATCGTCCAGCAGCGAACCGGCTCTGATAGTCGACTT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 34,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "CCGCCACAGCCCAGGCCACGCCCAGCACCACGCCCGCCGCCACGCCCG",
+    "truth_nt": "ACATCTATAGCTATCGTCCAGCAGCGAACCGGCTCTGATAGTCGACTT"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 93,
+   "target": {
+    "target_bits_per_nt": 1.929030219713847,
+    "target_bits_total": 92.59345054626465,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 136,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 34,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TCGACCAGCAGCAACACCAGCAGCACCACAGCCAGCACCACCAGCAGC",
+    "truth_nt": "TGCGGTCGCGTCTTATCTCTGTTGGTTCGAACGGCCTCGACGCGCAAA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 136,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "AGCACCAGCAGCAGCACCAGCAGCACCACAGCCAGCGCCACCAGGCCG",
+    "truth_nt": "TGCGGTCGCGTCTTATCTCTGTTGGTTCGAACGGCCTCGACGCGCAAA"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 94,
+   "target": {
+    "target_bits_per_nt": 2.1880437632401786,
+    "target_bits_total": 105.02610063552856,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 126,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 36,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GGCCAGCAGCTCAACGCCCAGCTCAACGCCCAGCACCACGCCCAGCAG",
+    "truth_nt": "AGCTGATGTATAGAGTTAACTGACATGTCGTACCTTAGACCCTCTACG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 126,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 39,
+    "seed_exact": false,
+    "seed_hamming_nt": 39,
+    "pred_nt": "AACGCCCAGCAGCACGCCCAGCCCAACGCCCAGCACCACAGCCAGCAC",
+    "truth_nt": "AGCTGATGTATAGAGTTAACTGACATGTCGTACCTTAGACCCTCTACG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 95,
+   "target": {
+    "target_bits_per_nt": 2.1345614890257516,
+    "target_bits_total": 102.45895147323608,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 110,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TGCTGATGGTGGCGAAGATGGTCAGCTGGATGGCCTGGAAGATGGCCT",
+    "truth_nt": "GTTAACACCCCGATACGTTCTCGATTGAGTTTTCGAACCTCCTATCGA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 110,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 38,
+    "pred_nt": "CCCCAACGCCCAGCAGCACCAGCAGCCCAACCAGCAGCCCAACGCCCA",
+    "truth_nt": "GTTAACACCCCGATACGTTCTCGATTGAGTTTTCGAACCTCCTATCGA"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 96,
+   "target": {
+    "target_bits_per_nt": 2.0849908590316772,
+    "target_bits_total": 100.07956123352051,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 52,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GCCACCAGGCCACGCCCGCCGCCACCAGCAGCGCCACCAGCAGCGCCA",
+    "truth_nt": "GTTTCGGAGTCGCTTAGTCGAAGTGTGCAAGCCTAACATTGACAGAAT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 52,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 32,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "CCAGCAGCACCACTTCCAGCACCACTTCCAGCGCCACTTCCAGCACCA",
+    "truth_nt": "GTTTCGGAGTCGCTTAGTCGAAGTGTGCAAGCCTAACATTGACAGAAT"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 97,
+   "target": {
+    "target_bits_per_nt": 2.0193691750367484,
+    "target_bits_total": 96.92972040176392,
+    "top1_rate": 0.08333333333333333,
+    "n_steps": 12,
+    "exact_upper_bound": 1.1215665478461501e-13
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 180,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 33,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CAGCCAGCCAGCACCACGCCCAGCCCGCCAGCCAGCACCACAGCCAGC",
+    "truth_nt": "CAGCTTTCCTTGCCGGTCCGCACTTCGGCTTGTATTGAGGATTTGCGG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 180,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "ACCACAGCCAGCACCACACCCAGCACCACAGCCAGCACCACAGCCAGC",
+    "truth_nt": "CAGCTTTCCTTGCCGGTCCGCACTTCGGCTTGTATTGAGGATTTGCGG"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 98,
+   "target": {
+    "target_bits_per_nt": 2.0402434964974723,
+    "target_bits_total": 97.93168783187866,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 40,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 37,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CTGGCTGGTGAATGAACTGGTGAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "TCTCACCCGCTGGTAAGGTCAGCTAGGAACTGCTCATATAACGGGCGA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 40,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 42,
+    "seed_exact": false,
+    "seed_hamming_nt": 42,
+    "pred_nt": "CTGGCTGGTGGCCTGGCTGGTGGCCTGGCTGGTGGCCTGGTGGATGGC",
+    "truth_nt": "TCTCACCCGCTGGTAAGGTCAGCTAGGAACTGCTCATATAACGGGCGA"
+   }
+  },
+  {
+   "tier": 16,
+   "host": "train",
+   "probe_id": 99,
+   "target": {
+    "target_bits_per_nt": 2.0685016065835953,
+    "target_bits_total": 99.28807711601257,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 79,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GAAAATTTTCAGCAAAATTTTCGCCAAAATTTTCGCCAAAATTTTCAG",
+    "truth_nt": "TTTCGAATGGAGCCAGAGAAGCAAAGGCACAGCGTCACTTCCAGTGCA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 79,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 37,
+    "seed_exact": false,
+    "seed_hamming_nt": 40,
+    "pred_nt": "GGAAGTCAACCAGGAAGTCGACCAGGAAGTCAACTTCCAGCTCGACCA",
+    "truth_nt": "TTTCGAATGGAGCCAGAGAAGCAAAGGCACAGCGTCACTTCCAGTGCA"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 120,
+   "target": {
+    "target_bits_per_nt": 2.1596547861893973,
+    "target_bits_total": 103.66342973709106,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 37,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 38,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GAAAAAAAAAAAAAAAAAAGCTGAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "ATTTTCAGGCGTTGGCGACTGAGGCCACTCAATACGGTCGACGATTAT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 37,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 40,
+    "seed_exact": false,
+    "seed_hamming_nt": 42,
+    "pred_nt": "GGAGCGCCTGGCCGAGCTGGCTGCCGAGCTGGCTGCCGAGCTGCTGGC",
+    "truth_nt": "ATTTTCAGGCGTTGGCGACTGAGGCCACTCAATACGGTCGACGATTAT"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 121,
+   "target": {
+    "target_bits_per_nt": 2.02520744005839,
+    "target_bits_total": 97.20995712280273,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 91,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 40,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AGCGCCTGGTGGCGCTGCTGGTGGCGGCGCTGGCTGGGGCGCTGGTGG",
+    "truth_nt": "TTATTTCTCATTGAGTTACTCCTGCGCGCCCACATGCCTAAGGTAGCG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 91,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 38,
+    "pred_nt": "ATGGCCTGGGGCGCTGGCTGGCTGGGGCGCTGGCTGGCTGGCTGGCTG",
+    "truth_nt": "TTATTTCTCATTGAGTTACTCCTGCGCGCCCACATGCCTAAGGTAGCG"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 122,
+   "target": {
+    "target_bits_per_nt": 1.949799194931984,
+    "target_bits_total": 93.59036135673523,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 59,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 32,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAAAAAAAAAAAGCTGGAAGAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "TCCTGACCCAAGGTGGACGAGAACACTGCAACCTCGATACGAAAATGG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 59,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 33,
+    "seed_exact": false,
+    "seed_hamming_nt": 31,
+    "pred_nt": "AGGCGGAAGAAGAGCTGGAAGAAGCGCTGGAAGAAGACTGGGAAGAAG",
+    "truth_nt": "TCCTGACCCAAGGTGGACGAGAACACTGCAACCTCGATACGAAAATGG"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 123,
+   "target": {
+    "target_bits_per_nt": 2.1621840794881186,
+    "target_bits_total": 103.78483581542969,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 113,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 34,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AGCAAAACAGCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "TACCGTCGGGGGGGAAACCTAAGTCCCTTATATGCAAGGACTATCCGA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 113,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "GCCTTTTCGCCAAAATTTTCAGCAAAATTTTCGCCAAAATTTTCGCCA",
+    "truth_nt": "TACCGTCGGGGGGGAAACCTAAGTCCCTTATATGCAAGGACTATCCGA"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 124,
+   "target": {
+    "target_bits_per_nt": 2.1558084885279336,
+    "target_bits_total": 103.47880744934082,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 53,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 32,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TGGAAAATTTTGATGAAAATTTTTTTCAAAATTTTGATGAAAATTTTA",
+    "truth_nt": "TTGGTACCCGGTCTGTGGAGTCAAGTACAGATTGCCCTCGTGACATCA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 53,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 37,
+    "pred_nt": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "TTGGTACCCGGTCTGTGGAGTCAAGTACAGATTGCCCTCGTGACATCA"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 125,
+   "target": {
+    "target_bits_per_nt": 2.0223657190799713,
+    "target_bits_total": 97.07355451583862,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 124,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 31,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTTTTTTTCCAGTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "GGCGTCAAGCACCTTGTTTCTGTTCCCCCAAGCCTGTTTCCTTGAGAA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 124,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "TGCAGCTGGCTGAACAGCTGGGCGAACAGCTGCTGGTGCAGCTGCTGG",
+    "truth_nt": "GGCGTCAAGCACCTTGTTTCTGTTCCCCCAAGCCTGTTTCCTTGAGAA"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 126,
+   "target": {
+    "target_bits_per_nt": 2.0085601806640625,
+    "target_bits_total": 96.410888671875,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 135,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 37,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAACTGGAAAAAAAAAAAAAAA",
+    "truth_nt": "CTCCCCGCTTCAATGGCCACGTAAAGGTTCGCAGATGCGCCATATACC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 135,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 37,
+    "seed_exact": false,
+    "seed_hamming_nt": 38,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "CTCCCCGCTTCAATGGCCACGTAAAGGTTCGCAGATGCGCCATATACC"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 127,
+   "target": {
+    "target_bits_per_nt": 2.2318615317344666,
+    "target_bits_total": 107.1293535232544,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 61,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 37,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "ACCGGCCCTTCTTATCAAACATAGTGATCTAGTACGTCTCGAATCGGC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 61,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 32,
+    "seed_exact": false,
+    "seed_hamming_nt": 33,
+    "pred_nt": "CCACAGCCAGCCGCCCAGCCAGCGCCACAGCCAGCGCCACGCCCAGCG",
+    "truth_nt": "ACCGGCCCTTCTTATCAAACATAGTGATCTAGTACGTCTCGAATCGGC"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 128,
+   "target": {
+    "target_bits_per_nt": 2.0929906591773033,
+    "target_bits_total": 100.46355164051056,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 135,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAATTTTAAAAAAAATTTTAAAAAAAATTT",
+    "truth_nt": "AACACACATTGCCAAGTACAGCACCCGAGTCTCCGGGCTAATTATAGA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 135,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 33,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "AAAAAAAAAAAAAAAAATTTTTTTTAAAATTTTTTTTAAAATTTTTTT",
+    "truth_nt": "AACACACATTGCCAAGTACAGCACCCGAGTCTCCGGGCTAATTATAGA"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 129,
+   "target": {
+    "target_bits_per_nt": 2.0522448221842446,
+    "target_bits_total": 98.50775146484375,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 86,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 33,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "GTAAAATTTTCTTCATCATTTTCTTCTTCATTTTCTTCTTCATTTTCT",
+    "truth_nt": "GTTTGTAGCATCGTTTAAAGACATTCTCGTGATTATCGGCCAACTCGT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 86,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "GTATCATTTTCTTCATCATTTTCTTCATCATTTTCTTCTCTTTTTTCT",
+    "truth_nt": "GTTTGTAGCATCGTTTAAAGACATTCTCGTGATTATCGGCCAACTCGT"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 130,
+   "target": {
+    "target_bits_per_nt": 2.076498051484426,
+    "target_bits_total": 99.67190647125244,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 163,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 31,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CCAGCACCACGCCCAGCACCACCAGCAGCACCACAGCCAGCACCACCA",
+    "truth_nt": "CGGAGCCCACGAGAGCCATTTCTTTTGTCAGTCGAACCCGCTAGGCTC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 163,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 33,
+    "seed_exact": false,
+    "seed_hamming_nt": 30,
+    "pred_nt": "CACCAACCACCAGACCAACCACCAGACCAACCACGCCACCAACCACCA",
+    "truth_nt": "CGGAGCCCACGAGAGCCATTTCTTTTGTCAGTCGAACCCGCTAGGCTC"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 131,
+   "target": {
+    "target_bits_per_nt": 2.0773135597507157,
+    "target_bits_total": 99.71105086803436,
+    "top1_rate": 0.07692307692307693,
+    "n_steps": 13,
+    "exact_upper_bound": 3.301690955230122e-15
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 11,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 32,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CTTCATTTTTTTTCCAGCCAGCAGCTTCAGCGCCAGCCCAGGCCAGCC",
+    "truth_nt": "CGCCAATGTTGTCGGTCTGAGGAGACGATGGAAAGGAAAGTCCGGTCC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 11,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "CGCCAATGTTGTCGGTCTGAGGAGACGATGGAAAGGAAAGTCCGGTCC"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 132,
+   "target": {
+    "target_bits_per_nt": 2.0377793411413827,
+    "target_bits_total": 97.81340837478638,
+    "top1_rate": 0.0,
+    "n_steps": 12,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 20,
+    "n_generated_nt": 48,
+    "n_generated_tok": 12,
+    "exact": false,
+    "hamming_nt": 41,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TTTTTTTTAAAATTTTTTTTAAAAAAAATTTTAAAATTTTAAAAAAAA",
+    "truth_nt": "CTCCGAATGGATGGGAGCACTTCGGTGTGCCCACTGCTGGCAGATGGG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 20,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 38,
+    "pred_nt": "TTTTCTGGAAAATTTTCTGGAAAATTTTCTGGAAAATTTTCTGGCTGG",
+    "truth_nt": "CTCCGAATGGATGGGAGCACTTCGGTGTGCCCACTGCTGGCAGATGGG"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 133,
+   "target": {
+    "target_bits_per_nt": 2.1564176777998605,
+    "target_bits_total": 103.50804853439331,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 153,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 39,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAATTTTCTGGCTGGGCTGCTGGCTGGTGGCCTGGCTGGTGGCCTGGC",
+    "truth_nt": "GTAATCAAATGTTAACTGCTTAACCATTTAAGCTAGTATCATGGGGAA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 153,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 38,
+    "seed_exact": false,
+    "seed_hamming_nt": 40,
+    "pred_nt": "AGATGGCCTGGTGGAGCTGCTGGCCGAGCTGGAAGAAGATGGCCTGGA",
+    "truth_nt": "GTAATCAAATGTTAACTGCTTAACCATTTAAGCTAGTATCATGGGGAA"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 134,
+   "target": {
+    "target_bits_per_nt": 2.1924694577852883,
+    "target_bits_total": 105.23853397369385,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 117,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 33,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAACTGGAAAAAAAACAGCAAAAAAAAGAAGAAAAAAAAAAAAAAAAA",
+    "truth_nt": "CCATCATTCAGGGAGAAACCCCCTGAAGAATATCAGGGCATTACTAGC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 3,
+    "k_revealed_nt": 48,
+    "offset": 117,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 32,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "CCATCATTCAGGGAGAAACCCCCTGAAGAATATCAGGGCATTACTAGC"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 135,
+   "target": {
+    "target_bits_per_nt": 2.2044924000898996,
+    "target_bits_total": 105.81563520431519,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 177,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 36,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CAGCCAGCGCCACCACGCCCAGCCAGCACCACGCCCGCCCAGCCGCCA",
+    "truth_nt": "AAAAGTCTATCCTGTAGTCCCCACAAGCACGGGGTGATAGAGTAGGAT"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 177,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 33,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "AAAAGTCTATCCTGTAGTCCCCACAAGCACGGGGTGATAGAGTAGGAT"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 136,
+   "target": {
+    "target_bits_per_nt": 2.1780480444431305,
+    "target_bits_total": 104.54630613327026,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 65,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 35,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAAAAAAAAACCAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "AGGTAACGTTACGGAGATAAGTGCCCGCTGTCCGTAGTTACGTAAGAG"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 2,
+    "k_revealed_nt": 48,
+    "offset": 65,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 35,
+    "seed_exact": false,
+    "seed_hamming_nt": 35,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "AGGTAACGTTACGGAGATAAGTGCCCGCTGTCCGTAGTTACGTAAGAG"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 137,
+   "target": {
+    "target_bits_per_nt": 2.077322175105413,
+    "target_bits_total": 99.71146440505981,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 18,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 33,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "TGGCGCTGGCGCTGGCTGTGGCGCTGGCCGTGGCGCTGCTGGTGGCGC",
+    "truth_nt": "CACAGACAGACGAAGCGTTCACACCCCTCGACCCCTGGCGGGAAATAC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 18,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 32,
+    "seed_exact": false,
+    "seed_hamming_nt": 32,
+    "pred_nt": "GGTGGCTGGCCTGGCTGGTGGCCTGGCTGGTGGCCTGGCTGATGGCCT",
+    "truth_nt": "CACAGACAGACGAAGCGTTCACACCCCTCGACCCCTGGCGGGAAATAC"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 138,
+   "target": {
+    "target_bits_per_nt": 2.1352937072515488,
+    "target_bits_total": 102.49409794807434,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 91,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 39,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "CAAAAAAAACGCCCGCCCAGCCAGCAAAACGCCCAGCAAAACAGCCAG",
+    "truth_nt": "AGCCATCCTAGTAACTAAGCCAGCTATCGCACTCTAAAGGCTTCGGAC"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 91,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 34,
+    "seed_exact": false,
+    "seed_hamming_nt": 36,
+    "pred_nt": "CGCCACGCCCAGCCAGCCGCCCAGCGCCACAGCCAGCGCCACCAGCAG",
+    "truth_nt": "AGCCATCCTAGTAACTAAGCCAGCTATCGCACTCTAAAGGCTTCGGAC"
+   }
+  },
+  {
+   "tier": 0,
+   "host": "fresh",
+   "probe_id": 139,
+   "target": {
+    "target_bits_per_nt": 2.1470298071702323,
+    "target_bits_total": 103.05743074417114,
+    "top1_rate": 0.0,
+    "n_steps": 13,
+    "exact_upper_bound": 0.0
+   },
+   "prefix": {
+    "k_revealed_nt": 48,
+    "offset": 77,
+    "n_generated_nt": 48,
+    "n_generated_tok": 13,
+    "exact": false,
+    "hamming_nt": 34,
+    "chance_exact": 1.262177448353619e-29,
+    "pred_nt": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "truth_nt": "CGTCATTTCCGTGTTAGAAAACCCGTACTGTACATGACCGTAACCCAA"
+   },
+   "icm": {
+    "protocol": "icm-confidence",
+    "sweeps_used": 4,
+    "k_revealed_nt": 48,
+    "offset": 77,
+    "n_generated_nt": 48,
+    "exact": false,
+    "hamming_nt": 36,
+    "seed_exact": false,
+    "seed_hamming_nt": 36,
+    "pred_nt": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "truth_nt": "CGTCATTTCCGTGTTAGAAAACCCGTACTGTACATGACCGTAACCCAA"
+   }
+  }
+ ]
+}

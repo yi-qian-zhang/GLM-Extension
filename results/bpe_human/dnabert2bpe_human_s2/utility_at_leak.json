@@ -1,0 +1,361 @@
+[
+ {
+  "run": "dnabert2bpe_human_s2",
+  "ckpt": "ep15.pt",
+  "epoch": "15",
+  "floor": 1.2634682230792256,
+  "r16_recognition": 0.6,
+  "r16_verbatim": 0.0,
+  "r1_recognition": 0.0,
+  "r1_verbatim": 0.0,
+  "downstream": {
+   "tasks": {
+    "prom_300_all": {
+     "n_classes": 2,
+     "linear_probe": {
+      "acc": 0.9005067567567567,
+      "mcc": 0.801003300170049,
+      "n_train": 20000,
+      "n_test": 5920,
+      "sec": 16.6353120803833
+     },
+     "finetune": {
+      "acc": 0.9212837837837838,
+      "mcc": 0.845306572017746,
+      "n_train": 20000,
+      "n_test": 5920,
+      "epochs": 2,
+      "lr": 3e-05,
+      "batch": 32,
+      "sec": 107.64807629585266
+     }
+    }
+   },
+   "task": "prom_300_all",
+   "linear_probe": {
+    "acc": 0.9005067567567567,
+    "mcc": 0.801003300170049,
+    "n_train": 20000,
+    "n_test": 5920,
+    "sec": 16.6353120803833
+   },
+   "finetune": {
+    "acc": 0.9212837837837838,
+    "mcc": 0.845306572017746,
+    "n_train": 20000,
+    "n_test": 5920,
+    "epochs": 2,
+    "lr": 3e-05,
+    "batch": 32,
+    "sec": 107.64807629585266
+   }
+  }
+ },
+ {
+  "run": "dnabert2bpe_human_s2",
+  "ckpt": "ep30.pt",
+  "epoch": "30",
+  "floor": 1.295952482331848,
+  "r16_recognition": 1.0,
+  "r16_verbatim": 0.1,
+  "r1_recognition": 0.0,
+  "r1_verbatim": 0.0,
+  "downstream": {
+   "tasks": {
+    "prom_300_all": {
+     "n_classes": 2,
+     "linear_probe": {
+      "acc": 0.9,
+      "mcc": 0.7999897730285978,
+      "n_train": 20000,
+      "n_test": 5920,
+      "sec": 15.193511962890625
+     },
+     "finetune": {
+      "acc": 0.9283783783783783,
+      "mcc": 0.8583161828426409,
+      "n_train": 20000,
+      "n_test": 5920,
+      "epochs": 2,
+      "lr": 3e-05,
+      "batch": 32,
+      "sec": 103.6315336227417
+     }
+    }
+   },
+   "task": "prom_300_all",
+   "linear_probe": {
+    "acc": 0.9,
+    "mcc": 0.7999897730285978,
+    "n_train": 20000,
+    "n_test": 5920,
+    "sec": 15.193511962890625
+   },
+   "finetune": {
+    "acc": 0.9283783783783783,
+    "mcc": 0.8583161828426409,
+    "n_train": 20000,
+    "n_test": 5920,
+    "epochs": 2,
+    "lr": 3e-05,
+    "batch": 32,
+    "sec": 103.6315336227417
+   }
+  }
+ },
+ {
+  "run": "dnabert2bpe_human_s2",
+  "ckpt": "ep50.pt",
+  "epoch": "50",
+  "floor": 1.3524270905704707,
+  "r16_recognition": 1.0,
+  "r16_verbatim": 0.4,
+  "r1_recognition": 0.0,
+  "r1_verbatim": 0.0,
+  "downstream": {
+   "tasks": {
+    "prom_300_all": {
+     "n_classes": 2,
+     "linear_probe": {
+      "acc": 0.9011824324324325,
+      "mcc": 0.8023638016821206,
+      "n_train": 20000,
+      "n_test": 5920,
+      "sec": 14.71164846420288
+     },
+     "finetune": {
+      "acc": 0.9319256756756756,
+      "mcc": 0.8640333616737061,
+      "n_train": 20000,
+      "n_test": 5920,
+      "epochs": 2,
+      "lr": 3e-05,
+      "batch": 32,
+      "sec": 104.9783866405487
+     }
+    }
+   },
+   "task": "prom_300_all",
+   "linear_probe": {
+    "acc": 0.9011824324324325,
+    "mcc": 0.8023638016821206,
+    "n_train": 20000,
+    "n_test": 5920,
+    "sec": 14.71164846420288
+   },
+   "finetune": {
+    "acc": 0.9319256756756756,
+    "mcc": 0.8640333616737061,
+    "n_train": 20000,
+    "n_test": 5920,
+    "epochs": 2,
+    "lr": 3e-05,
+    "batch": 32,
+    "sec": 104.9783866405487
+   }
+  }
+ },
+ {
+  "run": "dnabert2bpe_human_s2",
+  "ckpt": "ep80.pt",
+  "epoch": "80",
+  "floor": 1.4567647077850636,
+  "r16_recognition": 1.0,
+  "r16_verbatim": 0.3,
+  "r1_recognition": 0.4,
+  "r1_verbatim": 0.0,
+  "downstream": {
+   "tasks": {
+    "prom_300_all": {
+     "n_classes": 2,
+     "linear_probe": {
+      "acc": 0.8974662162162163,
+      "mcc": 0.7949225314596119,
+      "n_train": 20000,
+      "n_test": 5920,
+      "sec": 14.697418451309204
+     },
+     "finetune": {
+      "acc": 0.9216216216216216,
+      "mcc": 0.8456697838378291,
+      "n_train": 20000,
+      "n_test": 5920,
+      "epochs": 2,
+      "lr": 3e-05,
+      "batch": 32,
+      "sec": 103.51086640357971
+     }
+    }
+   },
+   "task": "prom_300_all",
+   "linear_probe": {
+    "acc": 0.8974662162162163,
+    "mcc": 0.7949225314596119,
+    "n_train": 20000,
+    "n_test": 5920,
+    "sec": 14.697418451309204
+   },
+   "finetune": {
+    "acc": 0.9216216216216216,
+    "mcc": 0.8456697838378291,
+    "n_train": 20000,
+    "n_test": 5920,
+    "epochs": 2,
+    "lr": 3e-05,
+    "batch": 32,
+    "sec": 103.51086640357971
+   }
+  }
+ },
+ {
+  "run": "dnabert2bpe_human_s2",
+  "ckpt": "ep120.pt",
+  "epoch": "120",
+  "floor": 1.6071384165697713,
+  "r16_recognition": 1.0,
+  "r16_verbatim": 0.3,
+  "r1_recognition": 0.8,
+  "r1_verbatim": 0.0,
+  "downstream": {
+   "tasks": {
+    "prom_300_all": {
+     "n_classes": 2,
+     "linear_probe": {
+      "acc": 0.8959459459459459,
+      "mcc": 0.7919055842197491,
+      "n_train": 20000,
+      "n_test": 5920,
+      "sec": 14.527269124984741
+     },
+     "finetune": {
+      "acc": 0.927027027027027,
+      "mcc": 0.8541120741594895,
+      "n_train": 20000,
+      "n_test": 5920,
+      "epochs": 2,
+      "lr": 3e-05,
+      "batch": 32,
+      "sec": 104.98772740364075
+     }
+    }
+   },
+   "task": "prom_300_all",
+   "linear_probe": {
+    "acc": 0.8959459459459459,
+    "mcc": 0.7919055842197491,
+    "n_train": 20000,
+    "n_test": 5920,
+    "sec": 14.527269124984741
+   },
+   "finetune": {
+    "acc": 0.927027027027027,
+    "mcc": 0.8541120741594895,
+    "n_train": 20000,
+    "n_test": 5920,
+    "epochs": 2,
+    "lr": 3e-05,
+    "batch": 32,
+    "sec": 104.98772740364075
+   }
+  }
+ },
+ {
+  "run": "dnabert2bpe_human_s2",
+  "ckpt": "ep150.pt",
+  "epoch": "150",
+  "downstream": {
+   "tasks": {
+    "prom_300_all": {
+     "n_classes": 2,
+     "linear_probe": {
+      "acc": 0.893581081081081,
+      "mcc": 0.7871592069987573,
+      "n_train": 20000,
+      "n_test": 5920,
+      "sec": 14.493974685668945
+     },
+     "finetune": {
+      "acc": 0.9243243243243243,
+      "mcc": 0.8486476023718665,
+      "n_train": 20000,
+      "n_test": 5920,
+      "epochs": 2,
+      "lr": 3e-05,
+      "batch": 32,
+      "sec": 104.37861251831055
+     }
+    }
+   },
+   "task": "prom_300_all",
+   "linear_probe": {
+    "acc": 0.893581081081081,
+    "mcc": 0.7871592069987573,
+    "n_train": 20000,
+    "n_test": 5920,
+    "sec": 14.493974685668945
+   },
+   "finetune": {
+    "acc": 0.9243243243243243,
+    "mcc": 0.8486476023718665,
+    "n_train": 20000,
+    "n_test": 5920,
+    "epochs": 2,
+    "lr": 3e-05,
+    "batch": 32,
+    "sec": 104.37861251831055
+   }
+  }
+ },
+ {
+  "run": "dnabert2bpe_human_s2",
+  "ckpt": "final.pt",
+  "epoch": "final",
+  "floor": 1.7344938547350655,
+  "r16_recognition": 1.0,
+  "r16_verbatim": 0.4,
+  "r1_recognition": 0.96,
+  "r1_verbatim": 0.0,
+  "downstream": {
+   "tasks": {
+    "prom_300_all": {
+     "n_classes": 2,
+     "linear_probe": {
+      "acc": 0.893581081081081,
+      "mcc": 0.7871592069987573,
+      "n_train": 20000,
+      "n_test": 5920,
+      "sec": 14.526831150054932
+     },
+     "finetune": {
+      "acc": 0.9243243243243243,
+      "mcc": 0.8486476023718665,
+      "n_train": 20000,
+      "n_test": 5920,
+      "epochs": 2,
+      "lr": 3e-05,
+      "batch": 32,
+      "sec": 105.14273500442505
+     }
+    }
+   },
+   "task": "prom_300_all",
+   "linear_probe": {
+    "acc": 0.893581081081081,
+    "mcc": 0.7871592069987573,
+    "n_train": 20000,
+    "n_test": 5920,
+    "sec": 14.526831150054932
+   },
+   "finetune": {
+    "acc": 0.9243243243243243,
+    "mcc": 0.8486476023718665,
+    "n_train": 20000,
+    "n_test": 5920,
+    "epochs": 2,
+    "lr": 3e-05,
+    "batch": 32,
+    "sec": 105.14273500442505
+   }
+  }
+ }
+]

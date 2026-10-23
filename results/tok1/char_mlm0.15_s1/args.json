@@ -1,0 +1,23 @@
+{
+ "tokenizer": "char",
+ "objective": "mlm@0.15",
+ "seed": 1,
+ "gpu": 3,
+ "out": "outputs/tok1",
+ "n_train": 5000,
+ "n_val": 500,
+ "n_test": 500,
+ "probes_per_tier": 20,
+ "tiers": "1,4,16",
+ "n_nonmember": 40,
+ "data_seed": 1234,
+ "epochs": 30,
+ "max_steps": null,
+ "batch": 64,
+ "lr": 0.0003,
+ "pool": 500,
+ "floor_n": 500,
+ "checkpoint": "final",
+ "score_only": false,
+ "smoke": false
+}

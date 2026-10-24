@@ -3084,9 +3084,17 @@ the paper now says so rather than letting a reviewer discover it.
 The predecessor's entry is also fixed: accepted at ACM BCB 2026, DOI 10.1145/3807503.3819470, which
 its own VERIFY note had been waiting for.
 
-**(d) Still printing our audit notes.** The bibliography renders the `note` fields, so the compiled
-PDF currently carries lines like ``checked 10 Oct 2026 against the PDF'' and ``VERIFY volume/pages''.
-Useful now, must be stripped before submission --- it is also about half a page of references.
+**(d) The audit notes are no longer printed (done 24 Oct).** `plainnat` renders `note`, so the
+references carried lines like ``checked 10 Oct 2026 against the PDF'' and ``VERIFY volume/pages''.
+`paper/strip_notes.py` now writes `refs_submit.bib` --- `refs.bib` with the `note` fields removed and
+every other field copied byte for byte, so the submitted bibliography cannot drift from the audited
+one --- and `main.tex` cites that. It cost a page: 13 pages became 12, references now 10-11.
+
+The script also prints which entries still say VERIFY, because stripping them should not hide an
+unfinished check from us. Five, as of today: the predecessor's page range in the BCB proceedings,
+`dalla2024nucleotide` volume/pages, `vonthenen2019reidentification` volume/number/pages and DOI
+(checked only against the bioRxiv version), `nikitin2026prs` volume/pages until the Genome Research
+issue is paginated, and whether `belfiore2025bihmia` can be cited as AAAI 2026 rather than arXiv.
 
 ## 4. Open items
 

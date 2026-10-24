@@ -38,32 +38,31 @@ sharing does to the people in the cohort.
 
 A recent study established that published genomic models memorise their fine-tuning sequences to
 very different degrees, without identifying what causes the difference
-[nemecek2026quantifying]. The natural follow-up is to find the cause, and we do; but the more
-consequential finding turned out to be that the safety check the field applies to answer this
-question is the wrong one, in a specific and repeatable way.
+[nemecek2026quantifying]. The natural follow-up is to find the cause, which we do. The more
+consequential finding is that the safety check the field uses to answer the question is the wrong
+one, in a specific and repeatable way.
 
 Our contributions, in the order the paper makes them:
 
 1. **Every released masked checkpoint we tested returns planted records verbatim at a
 held-out loss a practitioner would accept** (§leak). The cheapest leak costs seven
-thousandths of a bit and returns 30% of records. On real chromosome-22 haplotypes — each carried
-by at most five of 2,548 individuals — a record present as a single copy comes back letter for
-letter roughly one time in ten.
+thousandths of a bit and returns 30% of records. On real chromosome-22 haplotypes, each carried by
+at most five of 2,548 individuals, a record present as a single copy comes back letter for letter
+roughly one time in ten.
 
 1. **A model identifies an individual at checkpoints where it reproduces nothing at all**
 (§ident). Across three seeds and six checkpoints, single-copy verbatim recovery is exactly
 zero in every cell, while identification of the same records rises to 0.92–0.96 against a chance
-level of 0.0099, with none of 350 never-trained controls ever identified. Reproduction and
-identification have to be reported together; reporting either alone describes a different model than
-the one that exists.
+level of 0.0099, with none of 350 never-trained controls ever identified. Both numbers have to be
+reported. Either one on its own gives a misleading account of the same weights.
 
 1. **What decides whether a leak is reachable is how many token slots the record occupies,
 not how much the model knows** (§slots). Across six cut sizes at matched held-out loss the
 extraction rate is monotone in the slot count without exception, and the loss it costs to reach full
 extraction falls in the same direction. Models at both ends answer any single hidden nucleotide
-identically well; only reachability differs. The prediction this account makes about the released
-DNABERT family — no trend in k, because its overlapping tokens leave the slot count unchanged —
-was recorded before measuring and held.
+identically well; only reachability differs. Before measuring the released DNABERT family we
+recorded the prediction this account makes for it: no trend in k, because its overlapping tokens
+leave the slot count unchanged. The measurement agreed.
 
 1. **The number practitioners select on does not move** (§blind). Downstream task
 score changes by one to two per cent across the whole interval in which a model learns to identify
@@ -75,11 +74,11 @@ checkpoint reads 0% or 95% depending only on which decoder was run, and the two 
 opposite directions. Had we used one throughout, we would have drawn the opposite conclusion about
 tokenisation. This is why the measurement work belongs in the paper and not in an appendix.
 
-Two framings we deliberately avoid. We do not claim the character tokenizer is safe: HyenaDNA is a
-released single-nucleotide model of the same size as our controlled backbone and it extracts 95%,
-so the tokenisation result is scoped to one architecture and one objective at a time. And we do not
-report our decoder's failures as model safety — where it reads zero we show, using a leave-one-out
-bound, whether the content is nonetheless present.
+Two framings we avoid. We do not claim the character tokenizer is safe: HyenaDNA is a released
+single-nucleotide model of the same size as our controlled backbone and it extracts 95%, so the
+tokenisation result is scoped to one architecture and one objective at a time. We also do not report
+our decoder's failures as model safety. Where it reads zero we use a leave-one-out bound to show
+whether the content is present anyway.
 
 All code, the measured output behind every figure, and the working logs are public
 ([public repository URL — TODO]).
@@ -225,17 +224,17 @@ records of the same construction, scored by the same decoder in the same run.
 
 ## Released models leak at a quality you would ship
 
-A model trained until it is useless will memorise, and demonstrating that says nothing. The
-question a practitioner faces is whether leakage appears at a checkpoint they would actually
-choose. We therefore report every leak twice: once as a rate, and once as the held-out loss it
-costs, measured against the best checkpoint that run itself produced. A leak priced at a hundredth
-of a bit is a leak nobody will trade away.
+Whether a model memorises after being trained past the point of usefulness is not the question a
+practitioner faces. The question is whether leakage appears at a checkpoint they would choose. We
+therefore report every leak twice: as a rate, and as the held-out loss it costs relative to the
+best checkpoint that run itself produced. The second number is what makes the first actionable,
+because a leak that costs a hundredth of a bit is one nobody would trade away.
 
 **The cheapest leak costs seven thousandths of a bit.**
 
 Table §cost orders the released checkpoints by that price. DNABERT-2 reproduces 30% of
-planted records at **+0.007 bits/nt** above its own optimum — a difference no one selecting a
-checkpoint would notice, and none of the six downstream tasks we measure moves by more than one per
+planted records at **+0.007 bits/nt** above its own optimum. No one selecting a checkpoint
+would notice that difference, and none of the six downstream tasks we measure moves by more than one per
 cent across the same interval (§blind). Nucleotide Transformer gives up
 **+0.03 bits/nt** to leak 8–14% across three seeds. Both are far inside the range a user
 would consider interchangeable with the optimum.
@@ -310,17 +309,17 @@ any single nucleotide of a planted record with every other nucleotide supplied, 
 correctly 93–95% of the time for records planted *once*, which puts the implied ceiling on
 whole-record recovery at 0.21–0.39 across three seeds. The information is demonstrably present; our
 search does not find it, because a variable-length tokenisation re-segments the sequence on every
-proposal and leaves the search no foothold. A decoder matched to that vocabulary — the standard
-protocol is one — reaches 30%. Reporting the smaller of two numbers as the model's exposure is the
-error this paper exists to document, and we are careful not to commit it ourselves.
+proposal and leaves the search no foothold. The standard protocol, which is matched to that vocabulary,
+reaches 30%. We report the larger of the two, and note that taking the smaller one for the model's
+exposure is the mistake this paper is about.
 
 ## A model can identify a person without writing their DNA
 
 The safety check this field applies is reproduction: plant a record, ask the model to produce it,
 and conclude that a model which produces nothing has retained nothing. This section is the
 counterexample. At every checkpoint of every seed we tested, a single-copy human haplotype is
-reproduced *exactly zero* times — and the same model, at the same checkpoint, names which
-individual's haplotype it was trained on with accuracy approaching certainty.
+reproduced *exactly zero* times. At those same checkpoints the model names which individual's
+haplotype it was trained on, correctly in up to 96% of cases.
 
 **Setup.**
 
@@ -354,10 +353,24 @@ all 48 target nucleotides. Single-copy verbatim is zero in every cell of this ta
 Table §ident separates the two rulers cleanly. For records planted sixteen times,
 identification is already 0.60 at the best held-out checkpoint and reaches 1.00 by round 30, where
 verbatim recovery is still 0.10–0.20 and never rises above 0.60 anywhere in the run. For records
-planted once — the case that matters, because one individual's haplotype appears once in a real
-cohort — identification climbs from nothing to 0.92–0.96 while verbatim recovery stays at zero
-throughout. The two statistics are not measuring the same quantity at different sensitivities; they
-come apart, and they come apart in the direction that makes the cheaper check the misleading one.
+planted once, which is the case that matters because one individual's haplotype appears once in a
+real cohort, identification climbs from nothing to 0.92–0.96 while verbatim recovery stays at zero
+throughout. The two statistics are not the same quantity measured at different sensitivities. They
+diverge, and the cheaper one is the one that reads clean. Figure §ident shows the two
+against each other over the run.
+
+figure[t]
+
+[width=]F6_ident.pdf
+DNABERT-2 fine-tuned on chromosome 22, three seeds; the band is the range over seeds.
+**Left:** a haplotype planted once, which is the realistic case. Identification rises to 0.94
+while verbatim recovery of the same records stays at zero at every checkpoint. **Right:** the
+same records planted sixteen times, where verbatim recovery does move, so the zero on the left is
+not a decoder unable to read this family at all. Never-trained controls are flat at zero in both
+panels; the dotted line is chance, 0.0099. Rounds 15–120 use 10 probes per tier and the last
+round 50.
+
+figure
 
 The control settles the obvious objection. Across 19 cells and 350 never-trained segments, not one
 was ever ranked first. A probe loose enough to manufacture 0.94 out of nothing would have produced
@@ -369,10 +382,10 @@ Section §leak established that released models return records verbatim at a qua
 practitioners would accept, which is the result that is easiest to act on. This one is the result
 that is easiest to miss. A team following current practice plants canaries, measures extraction,
 reads zero at single copy, and ships. The model they ship will, on being handed a candidate
-haplotype, say whether that person was in the cohort — nine times in ten at the end of training,
-and better than one in five from round 80 onward, which is well inside the range anyone would train
-to. Reproduction and identification therefore have to be reported together; reporting either alone
-describes a different model than the one that exists.
+haplotype, say whether that person was in the cohort: nine times in ten at the end of training, and
+better than one in five from round 80 onward, which is well inside the range anyone would train to.
+Both numbers therefore have to be reported. Either one on its own gives a misleading account of the
+same weights.
 
 **A note on what is robust here.**
 
@@ -386,8 +399,8 @@ without it.
 
 ## What decides whether a leak can be reached
 
-Released models differ enormously in how much comes back out of them, and the obvious explanation
-— that some memorise more than others — is wrong. This section shows that what varies is not how
+Released models differ enormously in how much comes back out of them, and the obvious explanation,
+that some memorise more than others, is wrong. This section shows that what varies is not how
 much is stored but how many pieces have to be correct simultaneously to get it out, and that this is
 set by the tokenizer.
 
@@ -402,8 +415,22 @@ round 30 every k3 has saturated at 100% and the comparison says nothing at all.
 Two things in that table carry the claim. The extraction rate is monotone in the slot count with no
 exception across six cut sizes, and the loss it costs to reach full extraction falls monotonically in
 the same direction: 4.07 bits/nt at 16 slots, 2.99 at 12, 2.63 at 9.6, 2.47 at 8, and never reached
-at 24 or 48. A coarse tokenizer does not merely leak more. It leaks more cheaply, in the same
-currency §leak prices released checkpoints in.
+at 24 or 48. A coarse tokenizer leaks more, and it does so at a smaller cost in held-out loss, which
+is the quantity §leak reports released checkpoints in. Figure §slots plots both
+columns against the slot count.
+
+figure[t]
+
+[width=]F5_slots.pdf
+From-scratch backbone, next-token objective, three seeds, read at matched held-out loss.
+**Left:** records returned verbatim against the number of token slots the hidden 48
+nucleotides occupy, at four matched losses. Hollow markers repeat the measurement at window
+288 nt instead of 300. The character and 2-mer models never reach these losses and never extract.
+**Right:** the held-out loss at which extraction first reaches 100%, the same quantity
+§leak reports released checkpoints in. Both panels are the means behind
+Table §slots, recomputed from the published table of measurements.
+
+figure
 
 **Table (tab:slots)**
 
@@ -423,8 +450,8 @@ Never-trained controls read 0.00 in every tokenizer at every snapshot.*
 
 The character rows are empty because the character model never reaches the comparison points: its
 held-out loss stays between 2.00 and 2.04 for thirty epochs and its extraction rate stays at zero
-throughout. It does not resist extraction after overfitting; it does not overfit far enough to be
-asked.
+throughout. The right reading is that it never overfits far enough for the question to arise, not
+that it withstands extraction once it has.
 
 **The effect is not an artefact of the window.**
 
@@ -440,8 +467,8 @@ runs, at different geometries, trace the same curve.
 
 The slot account makes a claim about released models that is easy to check and awkward to explain
 away if it fails. DNABERT ships four checkpoints differing only in k [ji2021dnabert], which
-looks like the ideal natural experiment — but its k-mers *overlap*, advancing one nucleotide
-at a time, so the slot count stays near 48 whatever k is. The slot account therefore predicts no
+looks like the ideal natural experiment. But its k-mers *overlap*, advancing one nucleotide at
+a time, so the slot count stays near 48 whatever k is. The slot account therefore predicts no
 trend in that family at all, in contrast to the strong trend it predicts for non-overlapping
 tokenizers. We recorded that prediction before measuring.
 
@@ -454,36 +481,37 @@ sixteen times, for k=3,4,5,6 respectively. There is no trend, as predicted.
 It would be a misreading to conclude that the overlapping family has memorised nothing. Asked for any
 single nucleotide of a planted record with all the others supplied, those same four checkpoints
 answer correctly 0.99–1.00 of the time, and the implied ceiling on whole-record recovery runs from
-0.70 to 0.87. The records are in there, close to completely; 48 simultaneous slots is simply a wall
-that our search cannot climb. This is the mechanism of §slots appearing in a second place:
-the same quantity that makes a 6-mer model leak at 2.47 bits/nt makes an overlapping model look
-clean while holding the same content.
+0.70 to 0.87. The records are present, nearly in full, and with 48 slots to satisfy at once our
+search does not find them. The same mechanism is at work here as in the sweep above: the quantity
+that makes a 6-mer model leak at 2.47 bits/nt makes an overlapping model read clean while holding
+the same content.
 
 Stated carefully, then, the finding is not that finer tokenisation memorises less. Both ends of
 Table §slots learn a planted record to the same per-nucleotide accuracy. Coarser
-tokenisation makes what was learned *reachable*, and that is a different sentence to hand a
-practitioner, with a different remedy attached.
+tokenisation makes what was learned *reachable*. That is a different claim, and the remedy it
+implies is different.
 
 ## What a practitioner can do, and what will not warn them
 
 Two of the results above have an operational reading. Stopping where held-out loss stops improving
-does prevent capture — and the margin is three hundredths of a bit, which the number practitioners
-actually select on does not resolve.
+does prevent capture, but the margin is three hundredths of a bit, and the number practitioners
+actually select on cannot resolve it.
 
 **At the optimum there is nothing to extract, because nothing is stored yet.**
 
 It is worth distinguishing a record that is hidden from one that is absent. At the best saved
-checkpoint of Nucleotide Transformer on *E. coli*, the leave-one-out probe — every other target
-nucleotide supplied, one masked — reads 0.01, exactly the never-trained control, and the planted
+checkpoint of Nucleotide Transformer on *E. coli*, the leave-one-out probe, with every other
+target nucleotide supplied and one masked, reads 0.01, exactly the never-trained control, and the
+planted
 record's surprise is 2.128 and 2.115 bits/nt against 2.110 for a matched non-member. The
 member is indistinguishable from a non-member on the model's own scale. No decoder can recover what
 is not there, and our strongest decoder recovers 0%.
 
 Three hundredths of a bit later this is no longer true: across three seeds, 8%, 8% and 14% of
-records come back whole. Further out, at +0.44 bits/nt, 66–76%. The defence is real, the transition
-is abrupt, and it is worth noting that our own from-scratch backbone tolerates about ten times that
-drift before leaking at all — which is exactly why a study run only on a model one trains oneself
-reads reassuringly, and why this paper is built on released weights.
+records come back whole. Further out, at +0.44 bits/nt, 66–76%. The defence is real and the
+transition is abrupt. Our own from-scratch backbone tolerates roughly ten times that drift before
+leaking at all, so a study run only on a model one trains oneself reads more reassuringly than
+released weights warrant. That is why this paper is built on released weights.
 
 **The number people select on moves by one per cent.**
 
@@ -502,19 +530,32 @@ full held-out split. *id* is single-copy identification as in §ident.*
 |  | round 30 | 1.501 | 0.798 | 12% | 0.17 |
 |  | round 50 | 1.632 | 0.780 | 18% | 0.35 |
 | DNABERT-2, chr22 | round 15 (best MCC) | 1.264 | 0.798–0.801 | 0% | 0.00 |
-|  | round 120 | 1.600 | 0.788–0.792 | 30–50% | 0.70–0.80 |
+|  | round 120 | 1.600 | 0.784–0.792 | 30–50% | 0.70–0.80 |
 |  | final | 1.729 | 0.782–0.787 | 40–44% | 0.92–0.96 |
 
-On DNABERT-2 the score declines monotonically across the run, by 1.1–1.5% in total over three
-seeds, while single-copy identification climbs from nothing to 0.92–0.96. Selecting on that score
-would pick round 15, which is also the safe checkpoint — so the metric is not actively misleading
-there; it is simply mute. A practitioner watching it sees a flat line through the entire interval in
-which the model learns to identify individuals.
+On DNABERT-2 the score declines across the run by 1.1–1.6 points of MCC in total, monotonically in
+two seeds and with one reversal at round 50 in the third, while single-copy identification climbs
+from nothing to 0.92–0.96 (Figure §blind). Selecting on that score
+would pick round 15, which is also the safe checkpoint, so the metric is not misleading there. It
+carries no information either: a practitioner watching it sees a flat line through the entire
+interval in which the model learns to identify individuals.
 
 On NT fine-tuned on chromosome 22 the situation is worse, because there is no clean checkpoint for
 the metric to point at. The highest task score belongs to the earliest checkpoint saved, and that one
 already reproduces 6% of repeated records and identifies 4% of single copies. Choosing the best
 available model by downstream performance means choosing a model that is already leaking.
+
+figure[t]
+
+[width=]F7_blind.pdf
+Downstream score and leak, measured on the same weights at the same checkpoints.
+**Left:** DNABERT-2 on chromosome 22, three seeds, band over seeds. The score falls by
+1.1–1.6 points of MCC across a run in which single-copy identification goes from zero to 0.94.
+**Right:** Nucleotide Transformer 250M on the same corpus, where the best downstream score is
+the earliest checkpoint saved and that checkpoint already identifies 4% of single copies. Linear
+probe on frozen mean-pooled states, GUE promoter classification, full held-out split.
+
+figure
 
 **Recommendation.**
 
@@ -529,10 +570,10 @@ utility and nothing else.
 
 *Prefer a tokenizer with more slots, and measure what it costs you.* A model whose canary spans
 24 or 48 token positions did not leak at any loss we drove it to, including losses far past
-usefulness. That is the strongest protective effect we found. It is not free — fine-grained
+usefulness. That is the strongest protective effect we found. It is not free: fine-grained
 tokenizers carry their own costs in sequence length and downstream accuracy, which are
-task-dependent and which we did not measure across the board — so the honest form of this advice is
-that the slot count is a lever worth pricing, not a setting we can recommend blind.
+task-dependent and which we did not measure across the board. We therefore offer the slot count as a
+lever worth pricing rather than a setting we can recommend blind.
 
 ## Limitations and discussion
 
@@ -542,15 +583,15 @@ Every result here uses one fine-tuning corpus size. Scaling the number of indivi
 of sequence per individual, plausibly changes all of it: a planted record is a smaller fraction of
 the gradient signal in a larger corpus, which argues for less memorisation, while a larger cohort
 contains more rare haplotypes to confuse an identification probe, which argues for less
-identification but also for a harder task. We tested neither direction and decline to guess which
-dominates. This is the first experiment we would run next, and it is cheap on the controlled
-backbone and expensive on released weights.
+identification but also for a harder task. We tested neither direction. This is the first
+experiment we would run next; it is cheap on the controlled backbone and expensive on released
+weights.
 
 **The tokenisation result is scoped, and one released model sits outside the scope.**
 
 Table §slots varies k with the architecture, objective, optimiser and corpus fixed, which
-is the only setting in which the axis is clean — and it requires a model we train ourselves, because
-no released family offers it. Across architectures the ordering does not survive: HyenaDNA, a released
+is the only setting in which the axis is clean. It requires a model we train ourselves, because no
+released family offers it. Across architectures the ordering does not survive: HyenaDNA, a released
 single-nucleotide model at 14.2M parameters, almost exactly the size of our controlled backbone,
 reaches 95% verbatim extraction [nguyen2023hyenadna]. That comparison varies architecture,
 pretraining objective and objective-match simultaneously, so it does not contradict
@@ -568,8 +609,8 @@ We report whichever decoder is stronger per model, so every extraction figure un
 better attack could obtain. Two of our zeros are demonstrably decoder limits rather than model
 properties: on DNABERT-2 the leave-one-out ceiling for single-copy records is 0.21–0.39 and on the
 overlapping DNABERT family it is 0.70–0.87, while our searches return nothing in both cases. A reader
-should treat those zeros as "not reached by this attack" and nothing more — which is precisely the
-inference the field currently makes in the opposite direction.
+should treat those zeros as "not reached by this attack" and nothing more. From the same kind of
+zero, the field currently draws the opposite inference.
 
 **Extraction rates carry more uncertainty than the probe count suggests.**
 
@@ -581,11 +622,11 @@ agreement on identification to the digit and on extraction to within several poi
 
 **What we think this changes.**
 
-The practical recommendation — stop at the held-out optimum — is sound and nearly free, but it rests
-on a quantity nobody in this field tracks, and the margin is three hundredths of a bit. The deeper
-point is about what a null result licenses. A team that plants canaries, measures extraction, reads
+The practical recommendation, which is to stop at the held-out optimum, is sound and nearly free,
+but it rests on a quantity nobody in this field tracks, and the margin is three hundredths of a bit.
+The second point concerns what a null result licenses. A team that plants canaries, measures extraction, reads
 zero at single copy and ships has done what the literature currently asks, and has shipped a model
 that will tell an adversary which of their participants it was trained on. Releasing fine-tuned
 genomic weights should require reporting both numbers, measured with a decoder matched to the model's
-own tokenizer, with a never-trained control scored in the same run. None of that is expensive. All of
-it is currently optional.
+own tokenizer, with a never-trained control scored in the same run. None of that is expensive, and
+all of it is currently optional.

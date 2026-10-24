@@ -99,8 +99,8 @@ def inline(t: str) -> str:
     return t
 
 
-title = "Released Genomic Language Models Identify the People They Were Fine-Tuned On"
-sub = "Reproduction Is the Wrong Alarm, and Tokenisation Explains Why"
+title = "Identification without Reproduction"
+sub = "Privacy Leakage from Fine-Tuned Genomic Language Models"
 doc = [f"# {title}\n\n### {sub}\n",
        "Yiqian Zhang, [co-authors TBD], Erman Ayday — Case Western Reserve University\n",
        "> Reading view generated from `paper/sections/p0*.tex`. Figures are referenced but not yet\n"

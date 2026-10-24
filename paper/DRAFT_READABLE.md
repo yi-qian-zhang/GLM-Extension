@@ -1,6 +1,6 @@
-# Released Genomic Language Models Identify the People They Were Fine-Tuned On
+# Identification without Reproduction
 
-### Reproduction Is the Wrong Alarm, and Tokenisation Explains Why
+### Privacy Leakage from Fine-Tuned Genomic Language Models
 
 Yiqian Zhang, [co-authors TBD], Erman Ayday — Case Western Reserve University
 
@@ -95,7 +95,9 @@ for it [jagielski2023canary]. Repetition is the best-studied driver
 is that a prefix-conditioned decoder measures what a model holds; on masked models it does not,
 because the conditional it probes is not the one the model was trained on
 [mireshghallah2022mlm, wang2026infilling]. The second is that a model which reproduces nothing
-has retained nothing, which §ident contradicts directly.
+has retained nothing, which §ident contradicts directly, and which
+[che2026memorization] show cannot hold in general: counterfactual memorisation and adaptive
+extraction do not bound one another in either direction.
 
 **Tokenisation as a cause.**
 
@@ -111,11 +113,17 @@ correctly at once (§slots).
 
 **Genomic privacy.**
 
-Membership inference against genomic data predates language models, developed for allele-frequency
-releases and summary statistics [li2013membership], with reconstruction from released
-statistics following [tramer2015bounded]. That line assumes an adversary who sees aggregates.
-The adversary here sees weights, which is a newer object and a stronger one: it is queryable without
-limit and it was fitted to the individuals, not to a summary of them.
+Deciding whether a given person is in a cohort, from an artefact the cohort released, is the oldest
+attack in this literature. It has been demonstrated on allele-frequency releases
+[homer2008resolving], on beacon services that answer only yes or no
+[shringarpure2015beacon, vonthenen2019reidentification], on polygenic scores
+[paige2021reconstructing, nikitin2026prs], and on summary statistics in general
+[li2013membership, tramer2015bounded]. Two things carry over to us. The harm of record in this
+field is identification rather than reproduction [erlich2014routes], which is the opposite
+emphasis to the memorisation literature above. And the adversary here sees weights, a newer object
+and a stronger one: queryable without limit, and fitted to the individuals rather than to a summary
+of them. Generative models trained on genomes have been audited for membership leakage in their
+*output* [oprisanu2022synthetic, belfiore2025bihmia]; we audit released weights.
 
 **The study this extends.**
 

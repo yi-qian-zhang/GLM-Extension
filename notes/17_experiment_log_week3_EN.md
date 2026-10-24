@@ -3091,10 +3091,23 @@ every other field copied byte for byte, so the submitted bibliography cannot dri
 one --- and `main.tex` cites that. It cost a page: 13 pages became 12, references now 10-11.
 
 The script also prints which entries still say VERIFY, because stripping them should not hide an
-unfinished check from us. Five, as of today: the predecessor's page range in the BCB proceedings,
-`dalla2024nucleotide` volume/pages, `vonthenen2019reidentification` volume/number/pages and DOI
-(checked only against the bioRxiv version), `nikitin2026prs` volume/pages until the Genome Research
-issue is paginated, and whether `belfiore2025bihmia` can be cited as AAAI 2026 rather than arXiv.
+unfinished check from us. It listed five; three were resolved the same day against Europe PMC,
+Crossref and arXiv:
+
+- `vonthenen2019reidentification` is Bioinformatics **35(3):365--371**, 2019, and the DOI we had
+  guessed is right (Europe PMC, PMID 30052749). Volume, number and pages were simply missing.
+- `dalla2024nucleotide` is Nature Methods **22(2):287--297**, 2025 (PMID 39609566); only the issue
+  number was missing.
+- The predecessor is published, not merely accepted: **BCB '26, Rende, Italy, pp. 1--10**, ACM
+  (Crossref record for 10.1145/3807503.3819470).
+- `nikitin2026prs` is advance online publication, 17 Aug 2026, with **no volume or issue assigned**,
+  so it cites as Genome Research 2026 with its DOI and no pages field --- the article id
+  `gr.282202.126` would otherwise print as a page number.
+- `belfiore2025bihmia`: the arXiv listing claims **no venue and no journal reference**. The AAAI
+  2026 attribution came from a third-party lecture page whose date is inconsistent, so we cite the
+  preprint. dblp sits behind a bot check and was not worked around.
+
+Two VERIFY notes remain, both waiting on a publisher rather than on us.
 
 ## 4. Open items
 

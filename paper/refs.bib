@@ -2,12 +2,15 @@
 % Entries marked VERIFY need their venue/pages checked against the publisher page before submission.
 
 % ---------------------------------------------------------------- the paper this one extends
-@article{nemecek2026quantifying,
-  title   = {Quantifying Memorization and Privacy Risks in Genomic Language Models},
-  author  = {Nemecek, Alexander and Li, Wenbiao and Jiang, Xiaoqian and Vaidya, Jaideep and Ayday, Erman},
-  journal = {arXiv preprint arXiv:2603.08913},
-  year    = {2026},
-  note    = {VERIFY: cite the BCB 2026 proceedings version once it appears}
+@inproceedings{nemecek2026quantifying,
+  title     = {Quantifying Memorization and Privacy Risks in Genomic Language Models},
+  author    = {Nemecek, Alexander and Li, Wenbiao and Jiang, Xiaoqian and Vaidya, Jaideep and Ayday, Erman},
+  booktitle = {ACM International Conference on Bioinformatics, Computational Biology and Health
+               Informatics (ACM-BCB)},
+  year      = {2026},
+  doi       = {10.1145/3807503.3819470},
+  note      = {checked 23 Oct 2026: arXiv:2603.08913v3 states ``Accepted at ACM BCB 2026'' and the
+               ACM DOI resolves. VERIFY page range against the proceedings front matter.}
 }
 
 % ---------------------------------------------------------------- genomic language models
@@ -199,4 +202,118 @@
   number  = {3},
   pages   = {389--398},
   year    = {2014}
+}
+
+% ---------------------------------------------------------------- genomic privacy: what an
+% adversary has been able to do with released genomic artefacts, long before language models.
+% This is the lineage a RECOMB reader places the paper in; all five checked 23 Oct 2026.
+@article{homer2008resolving,
+  title   = {Resolving Individuals Contributing Trace Amounts of {DNA} to Highly Complex Mixtures
+             Using High-Density {SNP} Genotyping Microarrays},
+  author  = {Homer, Nils and Szelinger, Szabolcs and Redman, Margot and Duggan, David and Tembe,
+             Waibhav and Muehling, Jill and Pearson, John V. and Stephan, Dietrich A. and Nelson,
+             Stanley F. and Craig, David W.},
+  journal = {PLoS Genetics},
+  volume  = {4},
+  number  = {8},
+  pages   = {e1000167},
+  year    = {2008},
+  doi     = {10.1371/journal.pgen.1000167},
+  note    = {the original membership attack: aggregate allele frequencies alone place an individual
+             in a cohort}
+}
+
+@article{erlich2014routes,
+  title   = {Routes for Breaching and Protecting Genetic Privacy},
+  author  = {Erlich, Yaniv and Narayanan, Arvind},
+  journal = {Nature Reviews Genetics},
+  volume  = {15},
+  number  = {6},
+  pages   = {409--421},
+  year    = {2014},
+  doi     = {10.1038/nrg3723},
+  note    = {checked against the PMC record (PMC4151119); an erratum appears at 15:570. The survey
+             we use for ``identification is the harm'', rather than reproduction.}
+}
+
+@article{shringarpure2015beacon,
+  title   = {Privacy Risks from Genomic Data-Sharing Beacons},
+  author  = {Shringarpure, Suyash S. and Bustamante, Carlos D.},
+  journal = {The American Journal of Human Genetics},
+  volume  = {97},
+  number  = {5},
+  pages   = {631--646},
+  year    = {2015},
+  doi     = {10.1016/j.ajhg.2015.09.010},
+  note    = {a likelihood-ratio membership test against a service that answers only yes/no --- the
+             closest precedent for scoring a candidate haplotype against a released artefact}
+}
+
+@article{vonthenen2019reidentification,
+  title   = {Re-identification of Individuals in Genomic Data-Sharing Beacons via Allele Inference},
+  author  = {von Thenen, Nora and Ayday, Erman and Cicek, A. Ercument},
+  journal = {Bioinformatics},
+  year    = {2019},
+  doi     = {10.1093/bioinformatics/bty643},
+  note    = {VERIFY volume/number/pages and the DOI against the Oxford page; checked only against
+             the bioRxiv version (10.1101/200147) on 23 Oct 2026. Hiding the informative sites does
+             not protect the target, because linkage lets the adversary infer them.}
+}
+
+@article{paige2021reconstructing,
+  title   = {Reconstructing Genotypes in Private Genomic Databases from Genetic Risk Scores},
+  author  = {Paige, Brooks and Bell, James and Bellet, Aur\'elien and Gasc\'on, Adri\`a and Ezer, Daphne},
+  journal = {Journal of Computational Biology},
+  volume  = {28},
+  number  = {5},
+  pages   = {435--451},
+  year    = {2021},
+  doi     = {10.1089/cmb.2020.0445},
+  note    = {the RECOMB 2020 version is an extended abstract at pp. 266--268; this is the full
+             version. Evidence that RECOMB publishes attack papers on released genomic artefacts.}
+}
+
+@article{nikitin2026prs,
+  title   = {Private Information Leakage from Polygenic Risk Scores},
+  author  = {Nikitin, Kirill and Gursoy, Gamze},
+  journal = {Genome Research},
+  year    = {2026},
+  doi     = {10.1101/gr.282202.126},
+  note    = {RECOMB 2026; published 17 Aug 2026 in the RECOMB special issue. The current-year
+             template for a leakage paper at this venue: scores alone recover genotypes and
+             de-anonymise individuals. VERIFY volume/pages once the issue is paginated.}
+}
+
+% ---------------------------------------------------------------- privacy of generative models
+% trained on genomes: the nearest neighbours by subject, though neither audits released weights.
+@inproceedings{oprisanu2022synthetic,
+  title     = {On Utility and Privacy in Synthetic Genomic Data},
+  author    = {Oprisanu, Bristena and Ganev, Georgi and De Cristofaro, Emiliano},
+  booktitle = {Network and Distributed System Security Symposium (NDSS)},
+  year      = {2022},
+  doi       = {10.14722/ndss.2022.24092},
+  note      = {six generative models of genomes measured for utility and membership inference at
+               once; no model gives both. Synthetic output, not released weights.}
+}
+
+@article{belfiore2025bihmia,
+  title   = {Biologically-Informed Hybrid Membership Inference Attacks on Generative Genomic Models},
+  author  = {Belfiore, Asia and Passerat-Palmbach, Jonathan and Usynin, Dmitrii},
+  journal = {arXiv preprint arXiv:2511.07503},
+  year    = {2025},
+  note    = {checked 23 Oct 2026 against the arXiv page (v1 10 Nov 2025, v3 18 Dec 2025). Membership
+             inference against GPT-style generators of mutation profiles, with genomics-specific
+             signals added to a black-box attack. VERIFY the AAAI 2026 venue claim before citing it
+             as published.}
+}
+
+@article{che2026memorization,
+  title   = {Memorization Is Not Extraction: Tight Differential-Privacy Bounds and Audit Blind Spots},
+  author  = {Che, Xujun and Xu, Depeng and Yuan, Shuhan},
+  journal = {arXiv preprint arXiv:2608.27782},
+  year    = {2026},
+  note    = {checked 23 Oct 2026 against the arXiv page (v1, 27 Aug 2026). The theoretical twin of
+             our result: counterfactual memorisation and adaptive extraction do not control each
+             other, so a release can be fully extractable while loss-based audits certify it clean.
+             We measure that gap on released genomic weights and give the mechanism for it.}
 }

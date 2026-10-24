@@ -3043,6 +3043,51 @@ things worth recording from the writing:
 The compiled PDF is 12 pages: the extra title page the call allows, ten content pages, and the
 references, which the call excludes. It fits, with three figures and five tables in it.
 
+### 3.60 (23 Oct) The title was wrong for the venue, and the related work was missing this field's own literature
+
+**(a) Three years of RECOMB titles, read rather than assumed.** The accepted lists for 2024 (57
+papers), 2025 (55) and 2026 (65) contain **no paper with a manifesto subtitle**, so
+``Reproduction Is the Wrong Alarm, and Tokenisation Explains Why'' had to go. The venue's own
+privacy papers are named for the artefact that leaks: *Private Information Leakage from Polygenic
+Risk Scores* (RECOMB 2026, Nikitin and Gursoy, Genome Research special issue), *TX-Phase: Secure
+Phasing of Private Genomes in a Trusted Execution Environment* (2025), *Privacy Preserving
+Epigenetic PaceMaker* and *Secure Discovery of Genetic Relatives* (2024). Declarative findings are
+accepted too (*Synthetic control removes spurious discoveries from double dipping...*, 2025), so the
+register is sober, not dull. New title, chosen by the user from four candidates:
+
+> **Identification without Reproduction: Privacy Leakage from Fine-Tuned Genomic Language Models**
+
+It states the paper's own claim, it reads in the venue's syntax, and it separates us from the
+predecessor, which quantifies how much is memorised where we argue the usual ruler points the wrong
+way. The slot mechanism is deliberately not in the title: it is the explanation, and putting it
+there moves the reader's attention off the people being identified.
+
+**(b) Attack papers do belong here.** Worth recording because it was an open worry: RECOMB has
+published attacks on released genomic artefacts before. *Reconstructing Genotypes in Private Genomic
+Databases from Genetic Risk Scores* (RECOMB 2020, extended abstract pp. 266-268; full version in
+J. Comput. Biol. 28(5):435-451) and the 2026 polygenic-score paper above are both leakage results,
+not protective methods. Our threat model is in scope.
+
+**(c) Nine references added, all checked on 23 Oct.** The related-work section cited two CCS papers
+on privacy definitions and nothing a RECOMB reader would recognise as genomic privacy. Added: Homer
+et al. 2008 (allele-frequency membership), Shringarpure and Bustamante 2015 and von Thenen et al.
+2019 (beacons), Paige et al. 2021 and Nikitin and Gursoy 2026 (polygenic scores), Erlich and
+Narayanan 2014 (the survey for ``identification is the harm''), Oprisanu et al. 2022 (NDSS) and
+Belfiore et al. 2025 (membership inference against generative models of genomes --- the nearest
+neighbours by subject, though both audit model *output* rather than released weights), and Che et
+al. 2026, **the one that matters most**: it proves the general form of our section 5 result, that
+counterfactual memorisation and adaptive extraction do not bound one another in either direction,
+with a construction that is fully extractable while loss-based audits certify it clean. Our result
+is the measured instance of their theorem on released genomic weights, with a mechanism attached;
+the paper now says so rather than letting a reviewer discover it.
+
+The predecessor's entry is also fixed: accepted at ACM BCB 2026, DOI 10.1145/3807503.3819470, which
+its own VERIFY note had been waiting for.
+
+**(d) Still printing our audit notes.** The bibliography renders the `note` fields, so the compiled
+PDF currently carries lines like ``checked 10 Oct 2026 against the PDF'' and ``VERIFY volume/pages''.
+Useful now, must be stripped before submission --- it is also about half a page of references.
+
 ## 4. Open items
 
 - HyenaDNA (pretrained 1-mer, causal) as the second real-model anchor — not started; needs its HF code to load under transformers 4.29.

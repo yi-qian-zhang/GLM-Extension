@@ -7,8 +7,8 @@
 The safety check this field applies is reproduction: plant a record, ask the model to produce it,
 and conclude that a model which produces nothing has retained nothing. This section is the
 counterexample. At every checkpoint of every seed we tested, a single-copy human haplotype is
-reproduced \emph{exactly zero} times --- and the same model, at the same checkpoint, names which
-individual's haplotype it was trained on with accuracy approaching certainty.
+reproduced \emph{exactly zero} times. At those same checkpoints the model names which individual's
+haplotype it was trained on, correctly in up to 96\% of cases.
 
 \paragraph{Setup.}
 DNABERT-2 fine-tuned on human chromosome~22 with real rare-variant haplotypes as canaries, three
@@ -47,10 +47,24 @@ never-trained control & --- & \multicolumn{3}{c}{0 of 350 segments, 19 cells} \\
 Table~\ref{tab:ident} separates the two rulers cleanly. For records planted sixteen times,
 identification is already 0.60 at the best held-out checkpoint and reaches 1.00 by round~30, where
 verbatim recovery is still 0.10--0.20 and never rises above 0.60 anywhere in the run. For records
-planted once --- the case that matters, because one individual's haplotype appears once in a real
-cohort --- identification climbs from nothing to 0.92--0.96 while verbatim recovery stays at zero
-throughout. The two statistics are not measuring the same quantity at different sensitivities; they
-come apart, and they come apart in the direction that makes the cheaper check the misleading one.
+planted once, which is the case that matters because one individual's haplotype appears once in a
+real cohort, identification climbs from nothing to 0.92--0.96 while verbatim recovery stays at zero
+throughout. The two statistics are not the same quantity measured at different sensitivities. They
+diverge, and the cheaper one is the one that reads clean. Figure~\ref{fig:ident} shows the two
+against each other over the run.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{F6_ident.pdf}
+\caption{DNABERT-2 fine-tuned on chromosome~22, three seeds; the band is the range over seeds.
+\textbf{Left:} a haplotype planted once, which is the realistic case. Identification rises to 0.94
+while verbatim recovery of the same records stays at zero at every checkpoint. \textbf{Right:} the
+same records planted sixteen times, where verbatim recovery does move, so the zero on the left is
+not a decoder unable to read this family at all. Never-trained controls are flat at zero in both
+panels; the dotted line is chance, $0.0099$. Rounds 15--120 use 10 probes per tier and the last
+round 50.}
+\label{fig:ident}
+\end{figure}
 
 The control settles the obvious objection. Across 19 cells and 350 never-trained segments, not one
 was ever ranked first. A probe loose enough to manufacture 0.94 out of nothing would have produced
@@ -61,10 +75,10 @@ Section~\ref{sec:leak} established that released models return records verbatim 
 practitioners would accept, which is the result that is easiest to act on. This one is the result
 that is easiest to miss. A team following current practice plants canaries, measures extraction,
 reads zero at single copy, and ships. The model they ship will, on being handed a candidate
-haplotype, say whether that person was in the cohort --- nine times in ten at the end of training,
-and better than one in five from round~80 onward, which is well inside the range anyone would train
-to. Reproduction and identification therefore have to be reported together; reporting either alone
-describes a different model than the one that exists.
+haplotype, say whether that person was in the cohort: nine times in ten at the end of training, and
+better than one in five from round~80 onward, which is well inside the range anyone would train to.
+Both numbers therefore have to be reported. Either one on its own gives a misleading account of the
+same weights.
 
 \paragraph{A note on what is robust here.}
 Identification is a ranking, and rankings are stable under the numerical noise that makes extraction

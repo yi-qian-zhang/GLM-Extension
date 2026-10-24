@@ -4,16 +4,16 @@
 \section{Released models leak at a quality you would ship}
 \label{sec:leak}
 
-A model trained until it is useless will memorise, and demonstrating that says nothing. The
-question a practitioner faces is whether leakage appears at a checkpoint they would actually
-choose. We therefore report every leak twice: once as a rate, and once as the held-out loss it
-costs, measured against the best checkpoint that run itself produced. A leak priced at a hundredth
-of a bit is a leak nobody will trade away.
+Whether a model memorises after being trained past the point of usefulness is not the question a
+practitioner faces. The question is whether leakage appears at a checkpoint they would choose. We
+therefore report every leak twice: as a rate, and as the held-out loss it costs relative to the
+best checkpoint that run itself produced. The second number is what makes the first actionable,
+because a leak that costs a hundredth of a bit is one nobody would trade away.
 
 \paragraph{The cheapest leak costs seven thousandths of a bit.}
 Table~\ref{tab:cost} orders the released checkpoints by that price. DNABERT-2 reproduces 30\% of
-planted records at \textbf{+0.007\,\bits} above its own optimum --- a difference no one selecting a
-checkpoint would notice, and none of the six downstream tasks we measure moves by more than one per
+planted records at \textbf{+0.007\,\bits} above its own optimum. No one selecting a checkpoint
+would notice that difference, and none of the six downstream tasks we measure moves by more than one per
 cent across the same interval (\S\ref{sec:blind}). Nucleotide Transformer gives up
 \textbf{+0.03\,\bits} to leak 8--14\% across three seeds. Both are far inside the range a user
 would consider interchangeable with the optimum.
@@ -98,6 +98,6 @@ any single nucleotide of a planted record with every other nucleotide supplied, 
 correctly 93--95\% of the time for records planted \emph{once}, which puts the implied ceiling on
 whole-record recovery at 0.21--0.39 across three seeds. The information is demonstrably present; our
 search does not find it, because a variable-length tokenisation re-segments the sequence on every
-proposal and leaves the search no foothold. A decoder matched to that vocabulary --- the standard
-protocol is one --- reaches 30\%. Reporting the smaller of two numbers as the model's exposure is the
-error this paper exists to document, and we are careful not to commit it ourselves.
+proposal and leaves the search no foothold. The standard protocol, which is matched to that vocabulary,
+reaches 30\%. We report the larger of the two, and note that taking the smaller one for the model's
+exposure is the mistake this paper is about.

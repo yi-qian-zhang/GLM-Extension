@@ -17,8 +17,10 @@
 %   2 background + related         0.75    6 slot count (1 table, 1 fig)  1.50
 %   3 threat model + measurement   1.25    7 practice + blind metric      1.25
 %   4 leak at usable quality       1.75    8 limitations + discussion     0.75
-%   slack 0.25. Five figures is already 1.25-1.5 of the ten; F1 (probe geometry) is the
-%   first to cut, and fig:slots is load-bearing and may not move to the appendix.
+%   slack 0.25. Three figures are drawn (F5 slots, F6 ident, F7 blind, by pilot2/figures_privacy.py
+%   from results/figure_data.csv); the planned probe-geometry and released-cost figures were
+%   dropped, the first because the text carries it and the second because tab:cost already does.
+%   fig:slots is load-bearing and may not move to the appendix.
 %
 \documentclass[10pt,letterpaper]{article}
 \usepackage[margin=1in]{geometry}
@@ -49,7 +51,8 @@
 \newcommand{\excess}{\ensuremath{\Delta}}         % non-member bits minus member bits
 \newcommand{\TODO}[1]{\textcolor{red}{[TODO: #1]}}
 \newcommand{\NUM}[1]{\textcolor{blue}{#1}}        % number still pending a run; must be black at submission
-\newcommand{\CODEURL}{\TODO{public repository URL -- required by the call}}
+% Required by the call: a public, documented repository, linked in the paper.
+\newcommand{\CODEURL}{\url{https://github.com/yi-qian-zhang/GLM-Extension/tree/glmex}}
 
 \title{\textbf{Released Genomic Language Models Identify the People\\They Were Fine-Tuned On}\\[2pt]
 \large Reproduction Is the Wrong Alarm, and Tokenisation Explains Why}

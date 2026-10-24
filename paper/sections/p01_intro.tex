@@ -9,33 +9,32 @@ sharing does to the people in the cohort.
 
 A recent study established that published genomic models memorise their fine-tuning sequences to
 very different degrees, without identifying what causes the difference
-\citep{nemecek2026quantifying}. The natural follow-up is to find the cause, and we do; but the more
-consequential finding turned out to be that the safety check the field applies to answer this
-question is the wrong one, in a specific and repeatable way.
+\citep{nemecek2026quantifying}. The natural follow-up is to find the cause, which we do. The more
+consequential finding is that the safety check the field uses to answer the question is the wrong
+one, in a specific and repeatable way.
 
 Our contributions, in the order the paper makes them:
 
 \begin{enumerate}\itemsep2pt
 \item \textbf{Every released masked checkpoint we tested returns planted records verbatim at a
 held-out loss a practitioner would accept} (\S\ref{sec:leak}). The cheapest leak costs seven
-thousandths of a bit and returns 30\% of records. On real chromosome-22 haplotypes --- each carried
-by at most five of 2{,}548 individuals --- a record present as a single copy comes back letter for
-letter roughly one time in ten.
+thousandths of a bit and returns 30\% of records. On real chromosome-22 haplotypes, each carried by
+at most five of 2{,}548 individuals, a record present as a single copy comes back letter for letter
+roughly one time in ten.
 
 \item \textbf{A model identifies an individual at checkpoints where it reproduces nothing at all}
 (\S\ref{sec:ident}). Across three seeds and six checkpoints, single-copy verbatim recovery is exactly
 zero in every cell, while identification of the same records rises to 0.92--0.96 against a chance
-level of $0.0099$, with none of 350 never-trained controls ever identified. Reproduction and
-identification have to be reported together; reporting either alone describes a different model than
-the one that exists.
+level of $0.0099$, with none of 350 never-trained controls ever identified. Both numbers have to be
+reported. Either one on its own gives a misleading account of the same weights.
 
 \item \textbf{What decides whether a leak is reachable is how many token slots the record occupies,
 not how much the model knows} (\S\ref{sec:slots}). Across six cut sizes at matched held-out loss the
 extraction rate is monotone in the slot count without exception, and the loss it costs to reach full
 extraction falls in the same direction. Models at both ends answer any single hidden nucleotide
-identically well; only reachability differs. The prediction this account makes about the released
-DNABERT family --- no trend in $k$, because its overlapping tokens leave the slot count unchanged ---
-was recorded before measuring and held.
+identically well; only reachability differs. Before measuring the released DNABERT family we
+recorded the prediction this account makes for it: no trend in $k$, because its overlapping tokens
+leave the slot count unchanged. The measurement agreed.
 
 \item \textbf{The number practitioners select on does not move} (\S\ref{sec:blind}). Downstream task
 score changes by one to two per cent across the whole interval in which a model learns to identify
@@ -48,11 +47,11 @@ opposite directions. Had we used one throughout, we would have drawn the opposit
 tokenisation. This is why the measurement work belongs in the paper and not in an appendix.
 \end{enumerate}
 
-Two framings we deliberately avoid. We do not claim the character tokenizer is safe: HyenaDNA is a
-released single-nucleotide model of the same size as our controlled backbone and it extracts 95\%,
-so the tokenisation result is scoped to one architecture and one objective at a time. And we do not
-report our decoder's failures as model safety --- where it reads zero we show, using a leave-one-out
-bound, whether the content is nonetheless present.
+Two framings we avoid. We do not claim the character tokenizer is safe: HyenaDNA is a released
+single-nucleotide model of the same size as our controlled backbone and it extracts 95\%, so the
+tokenisation result is scoped to one architecture and one objective at a time. We also do not report
+our decoder's failures as model safety. Where it reads zero we use a leave-one-out bound to show
+whether the content is present anyway.
 
 All code, the measured output behind every figure, and the working logs are public
 (\CODEURL).

@@ -7,14 +7,14 @@ Every result here uses one fine-tuning corpus size. Scaling the number of indivi
 of sequence per individual, plausibly changes all of it: a planted record is a smaller fraction of
 the gradient signal in a larger corpus, which argues for less memorisation, while a larger cohort
 contains more rare haplotypes to confuse an identification probe, which argues for less
-identification but also for a harder task. We tested neither direction and decline to guess which
-dominates. This is the first experiment we would run next, and it is cheap on the controlled
-backbone and expensive on released weights.
+identification but also for a harder task. We tested neither direction. This is the first
+experiment we would run next; it is cheap on the controlled backbone and expensive on released
+weights.
 
 \paragraph{The tokenisation result is scoped, and one released model sits outside the scope.}
 Table~\ref{tab:slots} varies $k$ with the architecture, objective, optimiser and corpus fixed, which
-is the only setting in which the axis is clean --- and it requires a model we train ourselves, because
-no released family offers it. Across architectures the ordering does not survive: HyenaDNA, a released
+is the only setting in which the axis is clean. It requires a model we train ourselves, because no
+released family offers it. Across architectures the ordering does not survive: HyenaDNA, a released
 single-nucleotide model at 14.2M parameters, almost exactly the size of our controlled backbone,
 reaches 95\% verbatim extraction \citep{nguyen2023hyenadna}. That comparison varies architecture,
 pretraining objective and objective-match simultaneously, so it does not contradict
@@ -30,8 +30,8 @@ We report whichever decoder is stronger per model, so every extraction figure un
 better attack could obtain. Two of our zeros are demonstrably decoder limits rather than model
 properties: on DNABERT-2 the leave-one-out ceiling for single-copy records is 0.21--0.39 and on the
 overlapping DNABERT family it is 0.70--0.87, while our searches return nothing in both cases. A reader
-should treat those zeros as ``not reached by this attack'' and nothing more --- which is precisely the
-inference the field currently makes in the opposite direction.
+should treat those zeros as ``not reached by this attack'' and nothing more. From the same kind of
+zero, the field currently draws the opposite inference.
 
 \paragraph{Extraction rates carry more uncertainty than the probe count suggests.}
 The re-masking decode is a discrete iteration and is sensitive to the model's last-bit arithmetic.
@@ -41,11 +41,11 @@ Identification does not share this sensitivity. Anyone reproducing these numbers
 agreement on identification to the digit and on extraction to within several points.
 
 \paragraph{What we think this changes.}
-The practical recommendation --- stop at the held-out optimum --- is sound and nearly free, but it rests
-on a quantity nobody in this field tracks, and the margin is three hundredths of a bit. The deeper
-point is about what a null result licenses. A team that plants canaries, measures extraction, reads
+The practical recommendation, which is to stop at the held-out optimum, is sound and nearly free,
+but it rests on a quantity nobody in this field tracks, and the margin is three hundredths of a bit.
+The second point concerns what a null result licenses. A team that plants canaries, measures extraction, reads
 zero at single copy and ships has done what the literature currently asks, and has shipped a model
 that will tell an adversary which of their participants it was trained on. Releasing fine-tuned
 genomic weights should require reporting both numbers, measured with a decoder matched to the model's
-own tokenizer, with a never-trained control scored in the same run. None of that is expensive. All of
-it is currently optional.
+own tokenizer, with a never-trained control scored in the same run. None of that is expensive, and
+all of it is currently optional.

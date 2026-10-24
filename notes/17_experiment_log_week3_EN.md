@@ -2954,6 +2954,95 @@ paper's Table 1. The 6.55M recorded earlier in 3.6 was our miscount, and 3.6 now
 keeping in mind for the paper: HyenaDNA at 14.24M and our controlled backbone at 12.9M are the
 same size, so the 1-mer counterexample cannot be waved away as a scale effect.
 
+### 3.59 (21-23 Oct) Every chromosome-22 cell re-measured on one basis, the tokenizer sweep completed, and the paper written
+
+**(a) `kcurve300` did finish, which closes 3.58(h).** All eighteen runs (k = 1..6, three seeds,
+window 300) completed before the outage and the matched-floor analysis ran with them. The curve now
+has every cut size:
+
+| tokenizer | slots for 48 nt | @2.05 | @2.10 | @2.20 | @2.40 | loss at 100 % |
+|---|---|---|---|---|---|---|
+| char | 48 | - | - | - | - | never |
+| 2-mer | 24 | 0 % | 0 % | 0 % | 0 % | never |
+| 3-mer | 16 | 0 % | 0 % | 0 % | 2 % | 4.07 |
+| 4-mer | 12 | 0 % | 0 % | 2 % | 12 % | 2.99 |
+| 5-mer | 9.6 | 0 % | 2 % | 24 % | 61 % | 2.63 |
+| 6-mer | 8 | 1 % | 17 % | 67 % | **92 %** | **2.47** |
+
+Monotone in the slot count with no exception across six cut sizes, and monotone in what full
+extraction costs. The window-288 sweep of 3.58(f) agrees where the two share a tokenizer: 2 % against
+3 %, 12 % against 11 %, 92 % against 91 % at matched loss 2.40, and 4.07/2.99/2.47 against
+4.15/3.01/2.47 for the cost of saturation. Two sets of runs at different geometries, one curve.
+
+**(b) The nineteen chromosome-22 cells were re-run on one numerical basis (23 Oct, 20:51-23:34).**
+`outputs/chr22_rerun/STATUS.txt` records `rc=0` on all nineteen and `ALL_FINISHED`. Every cell is 50
+probes per tier, every cell on the same host after the reboot, so nothing in the table below is
+comparing a pre-reboot number with a post-reboot one. The reports are now published as
+`results/*/*/rb_*.{md,json}`, which they were not before: the newest reports in `results/` dated from
+14-15 Oct, had 20 probes and 32 restarts, and disagree with these (the overlapping family read
+10/0/10/0 % there against 2/0/4/0 % here). The 14-15 Oct cells are superseded, not averaged in.
+
+| checkpoint | held-out bits/nt | 16 copies, standard | 16 copies, ours | 1 copy, standard | 1 copy, ours |
+|---|---|---|---|---|---|
+| NT 250M round 15 | 1.145 | 6 % | 6 % | 0 % | 0 % |
+| NT 250M round 30 | 0.739 | 10 % | 28 % | 0 % | 0 % |
+| NT 250M round 50 | 0.465 | 18 % | **52 %** | 2 % | **8 %** |
+| NT 500M round 15 | 1.045 | 16 % | 14 % | 0 % | 0 % |
+| NT 500M round 50 | 0.396 | 24 % | **58 %** | 0 % | **12 %** |
+| never-trained control | - | 0 % | 0 % | 0 % | 0 % |
+
+The first launch of this batch died instantly in nineteen cells on `data/human/chr22.fa`:
+`GLMEXT_DATA` lives in `.bashrc`, which a non-interactive SSH does not read. That is the third time
+the same `.bashrc` guard has cost a batch (conda, the proxy, now the data root), and the fix is the
+same each time -- export it inside the script. Before relaunching I also checked that all four runs
+name `canary_npz=/data/wh/yqdata/glm_data/human/canaries_chr22.npz`; without it they would have
+fallen back to iid canaries silently and the whole human arm would have measured nothing.
+
+**(c) Where our decoder reads zero, the leave-one-out probe says the record is there.** Asked for one
+nucleotide of a planted record with the other 47 supplied, DNABERT-2 answers correctly 0.94/0.93/0.95
+across three seeds for records planted **once**, which bounds whole-record recovery at 0.27/0.21/0.39.
+Our BPE search returns 0 % from all three. The standard prefix-conditioned protocol, which is matched
+to that vocabulary, returns 30 %. The released overlapping family behaves the same way and more
+strongly: per-position accuracy 0.99-1.00 at 16 copies, implied ceiling 0.70-0.87, and our
+nucleotide-level decoder recovers 2 %, 0 %, 4 %, 0 % for k = 3,4,5,6. Both zeros are limits of the
+attack, not properties of the model, and the paper has to say so in both places -- it is the same
+inference the field currently makes in the opposite direction.
+
+**(d) `pilot2/rescore.py` (`29d6d12`) separates the measurement from the machine.** Scoring a saved
+checkpoint again from its own `args.json` was not possible before, so every recognition number dated
+from the day its run finished -- a problem once the host's floating-point behaviour changed across the
+18 Oct reboot. Re-scoring a checkpoint whose old scores still exist answers the question the paper
+has to answer anyway: identification reproduces **to the digit** (rank-1 0.800 before and after,
+held-out loss identical to four decimals), while extraction on the same checkpoint moves by **six
+points**, which is the same order as the binomial standard error on 50 probes. So: identification
+quoted without an interval, extraction quoted with one.
+
+**(e) Code, measurements and logs are public.** `pilot2/export_figure_data.py` flattens 3,844 score
+files (725 MB) into `results/figure_data.csv` -- 27,106 rows, 2.3 MB, keyed on (group, run) because
+`3mer_ar_s0` exists in both `kcurve` and `kcurve300`. That file, 201 MB of score output and these
+notes are on `origin/glmex`. It was checked rather than assumed: the matched-loss cells recomputed
+from the CSV reproduce the table in (a) cell for cell, including the window-288 column.
+
+**(f) The paper is written end to end.** Eight sections, about 5,800 words, privacy first, in
+`paper/sections/p0*.tex`, with Overleaf connected over its git bridge (`git.overleaf.com`, branch
+`main`) rather than GitHub Sync, because the LaTeX is a subdirectory of a large repository. Three
+things worth recording from the writing:
+
+- The citations never compiled. `main.tex` loaded no `natbib`, so every `\citep` was an undefined
+  control sequence, the key was printed into the running text and the bibliography came out empty:
+  28 errors, all of them this. With `natbib` and `plainnat` the log is clean -- 0 errors, 0 warnings.
+- Drawing the figures caught two wrong numbers and one broken cross-reference. The round-120 MCC
+  range was quoted as 0.788-0.792 when seed 1 reads 0.7845; the downstream decline was called
+  monotone when seed 2 rises at round 50 before falling again; and the paragraph on DNABERT's flat
+  row cited `\S\ref{sec:slots}`, which is its own section, so the printed paper pointed the reader
+  at the page they were on. Plotting a claim is a cheaper audit than re-reading it.
+- Three figures are drawn, not five: `F5_slots`, `F6_ident`, `F7_blind`, by
+  `pilot2/figures_privacy.py` from `figure_data.csv`. The planned probe-geometry figure was dropped
+  because the text carries it, and the released-cost figure because Table 1 already does.
+
+The compiled PDF is 12 pages: the extra title page the call allows, ten content pages, and the
+references, which the call excludes. It fits, with three figures and five tables in it.
+
 ## 4. Open items
 
 - HyenaDNA (pretrained 1-mer, causal) as the second real-model anchor — not started; needs its HF code to load under transformers 4.29.

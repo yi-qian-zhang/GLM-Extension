@@ -104,6 +104,10 @@ GRCh38), the GUE benchmark, and the reference genomes of \emph{E.~coli} K-12 MG1
 \TODO{funding and compute}
 
 \bibliographystyle{plainnat}
-\bibliography{refs}
+% refs_submit.bib is refs.bib with the audit notes stripped, because plainnat prints `note` and a
+% reviewer should not read "checked 10 Oct 2026 against the PDF" inside our references. refs.bib
+% stays the master; regenerate with `python strip_notes.py` after editing it, which also reports
+% which entries still say VERIFY.
+\bibliography{refs_submit}
 
 \end{document}

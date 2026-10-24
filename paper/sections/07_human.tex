@@ -1,0 +1,78 @@
+\section{Real haplotypes, real alleles}
+\label{sec:human}
+
+\paragraph{Canaries that are real sequence from real individuals.}
+A canary here is a 96\nt{} window of chromosome~22 centred on a variant with
+$\mathrm{AC}/\mathrm{AN} \le 0.001$ and at most five carriers among the 2548 individuals of
+1000~Genomes phase~3, with the carrier's alternate allele substituted at every rare variant inside
+the window: 400 segments from 366 distinct individuals, \NUM{2.07} rare variants each. This is a
+stricter test than a random canary, because a real segment is partly predictable from biology.
+Non-members come from the same pool, so the control is equally real and equally rare and differs
+only in having been trained on. Two construction details matter: the ranking pool and the fresh host
+must both be real sequence, and \texttt{INFO AF} is rounded to two decimals, so every variant rarer
+than 1\% reads as zero and the frequency has to be computed from \texttt{AC/AN} (Appendix~A5).
+
+\paragraph{The question this allows.}
+Reveal the first 48\nt{} and let the model continue. At each rare variant it produces the carrier's
+allele, the reference base, or neither. The reference base is the null: a model that had learned
+only the reference genome would always produce it, so the carrier's allele means the memorised
+content is an allele at a known locus rather than an arbitrary string. The scope is worth stating
+plainly: the records are planted by us, the adversary holds the flanking 48\nt, and we do not link a
+recovered allele to an identity. What we demonstrate is memorisation whose content is genotypic ---
+not a re-identification attack on a deployed cohort model.
+
+\begin{table}[t]
+\centering
+\caption{Human chromosome~22, released models, round~50, six runs per model (\NUM{564} variant
+trials for the repeated tier, \NUM{542} for the single-copy tier, \NUM{595} for non-members).
+Rare-allele recovery, verbatim extraction and the control-corrected surprise \excess. All three
+are means over four independent draws of the member/control canary split (three model seeds on the
+first draw, one on each of the other three); $\pm$ is the spread across draws, which is the error bar
+that matters here because the split is a design choice and not a model seed (Sec.~\ref{sec:published}).
+Recovery is read against the control column in the same row.}
+\label{tab:human}
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{3}{c}{rare-allele recovery} & \multicolumn{2}{c}{verbatim extraction} & \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-6}
+model & $r{=}16$ & $r{=}1$ & control & $r{=}16$ & $r{=}1$ & \excess{} at $r{=}16$ \\
+\midrule
+DNABERT \kmer{3} & 0.98 & 0.27 & 0.24 & 95\% & 0\% & $1.45 \pm 0.07$ \\
+DNABERT \kmer{4} & 0.97 & 0.26 & 0.23 & 87\% & 0\% & $1.51 \pm 0.07$ \\
+DNABERT \kmer{5} & 0.92 & 0.28 & 0.24 & 75\% & 0\% & $1.50 \pm 0.06$ \\
+DNABERT \kmer{6} & 0.96 & 0.39 & 0.24 & 87\% & 4\% & $1.68 \pm 0.04$ \\
+DNABERT-2 (BPE)  & 1.00 & \textbf{0.85} & 0.27 & 100\% & \textbf{58\%} & $2.35 \pm 0.06$ \\
+HyenaDNA medium  & 0.92 & \textbf{0.45} & 0.24 & 82\%  & 3\%  & $2.39 \pm 0.11$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Repeated records leak from every released model.}
+Every released model (Table~\ref{tab:human}) produces the carrier's rare allele for
+\NUM{92}--\NUM{100\%} of the variants in
+a segment it saw sixteen times, where the same model produces it for \NUM{23}--\NUM{27\%} in matched
+segments it never saw --- about the \NUM{25\%} reachable by chance among four bases. Before
+fine-tuning the two are indistinguishable (members \NUM{0.21}, non-members \NUM{0.25} at round~0), so
+the gap is created by training on the record and not by the segment being predictable. The whole
+48\nt{} continuation comes back exactly for \NUM{75}--\NUM{100\%} of those segments, so the alleles
+arrive inside the right sequence rather than as isolated lucky bases.
+
+\paragraph{For the heaviest memorisers one copy is enough.}
+A cohort record appears once, not sixteen times, so the $r{=}1$ column is the one that matters, and
+it separates the panel sharply. DNABERT-2 recovers the carrier's allele for \NUM{85\%} of the
+variants in a segment it saw \emph{once}, against its own \NUM{27\%} control, and reproduces
+\NUM{58\%} of those segments verbatim; HyenaDNA reaches \NUM{45\%} against \NUM{24\%} but reproduces
+\NUM{3\%}; the \kmer{6} reaches \NUM{39\%} with \NUM{4\%}; the \kmer{3}, \kmer{4} and \kmer{5} sit on
+their own controls with no extraction at all. The two models that memorise most under every other
+ruler are also the two for which a single copy suffices. The timing rules out a convenient stopping
+point: DNABERT-2's repeated tier is already at \NUM{0.73} recovery and \NUM{33\%} extraction by
+round~8, while its single-copy tier is still at the control there and only reaches \NUM{0.85} by
+round~50.
+
+\paragraph{Membership inference alone would have missed it.}
+Ranking a single-copy canary against 100 other real rare segments succeeds \NUM{5}--\NUM{20\%} of
+the time for the four $k$-mer checkpoints, which reads as safe, while those same checkpoints are at
+\NUM{75}--\NUM{95\%} verbatim extraction one tier up. For DNABERT-2 the single-copy rank-1 rate is
+\NUM{99\%}, so there the two rulers agree --- but an auditor who had run only the ranking test on the
+$k$-mer family would have reported no risk. Extraction and allele recovery therefore belong beside
+membership scores in any audit of a released genomic model.

@@ -1,0 +1,51 @@
+% Privacy-first section 8: limitations and discussion. Budget 0.75 page, no figure.
+\section{Limitations and discussion}
+\label{sec:discussion}
+
+\paragraph{Cohort size is held fixed, and we do not know its effect.}
+Every result here uses one fine-tuning corpus size. Scaling the number of individuals, or the amount
+of sequence per individual, plausibly changes all of it: a planted record is a smaller fraction of
+the gradient signal in a larger corpus, which argues for less memorisation, while a larger cohort
+contains more rare haplotypes to confuse an identification probe, which argues for less
+identification but also for a harder task. We tested neither direction and decline to guess which
+dominates. This is the first experiment we would run next, and it is cheap on the controlled
+backbone and expensive on released weights.
+
+\paragraph{The tokenisation result is scoped, and one released model sits outside the scope.}
+Table~\ref{tab:slots} varies $k$ with the architecture, objective, optimiser and corpus fixed, which
+is the only setting in which the axis is clean --- and it requires a model we train ourselves, because
+no released family offers it. Across architectures the ordering does not survive: HyenaDNA, a released
+single-nucleotide model at 14.2M parameters, almost exactly the size of our controlled backbone,
+reaches 95\% verbatim extraction \citep{nguyen2023hyenadna}. That comparison varies architecture,
+pretraining objective and objective-match simultaneously, so it does not contradict
+\S\ref{sec:slots}; it bounds its generality. ``Finer tokenisation is safer'' is false as a general
+claim and we do not make it.
+
+\paragraph{The human arm is one chromosome.}
+Canaries are drawn from chromosome~22 of a single cohort. Chromosome~21 appears only as pretraining
+and replication. Nothing in the construction is chromosome-specific, but we have not shown that.
+
+\paragraph{Our decoders are lower bounds, including where they read zero.}
+We report whichever decoder is stronger per model, so every extraction figure understates what a
+better attack could obtain. Two of our zeros are demonstrably decoder limits rather than model
+properties: on DNABERT-2 the leave-one-out ceiling for single-copy records is 0.21--0.39 and on the
+overlapping DNABERT family it is 0.70--0.87, while our searches return nothing in both cases. A reader
+should treat those zeros as ``not reached by this attack'' and nothing more --- which is precisely the
+inference the field currently makes in the opposite direction.
+
+\paragraph{Extraction rates carry more uncertainty than the probe count suggests.}
+The re-masking decode is a discrete iteration and is sensitive to the model's last-bit arithmetic.
+Re-running an identical cell after the host's floating-point behaviour changed moved its extraction
+rate by six points, comparable to the binomial standard error on 50 probes (\S\ref{sec:measure}).
+Identification does not share this sensitivity. Anyone reproducing these numbers should expect
+agreement on identification to the digit and on extraction to within several points.
+
+\paragraph{What we think this changes.}
+The practical recommendation --- stop at the held-out optimum --- is sound and nearly free, but it rests
+on a quantity nobody in this field tracks, and the margin is three hundredths of a bit. The deeper
+point is about what a null result licenses. A team that plants canaries, measures extraction, reads
+zero at single copy and ships has done what the literature currently asks, and has shipped a model
+that will tell an adversary which of their participants it was trained on. Releasing fine-tuned
+genomic weights should require reporting both numbers, measured with a decoder matched to the model's
+own tokenizer, with a never-trained control scored in the same run. None of that is expensive. All of
+it is currently optional.

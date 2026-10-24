@@ -1,0 +1,50 @@
+% Privacy-first section 2. Budget 0.75 page, no figure.
+\section{Background and related work}
+\label{sec:related}
+
+\paragraph{Memorisation in language models.}
+Verbatim extraction from a prefix is the standard operationalisation of memorisation
+\citep{carlini2023quantifying}, and planted canaries are the standard way to obtain a ground truth
+for it \citep{jagielski2023canary}. Repetition is the best-studied driver
+\citep{tirumala2022memorization}, with capacity arguments explaining why
+\citep{morris2025capacity}. Two assumptions carry over into genomics without examination. The first
+is that a prefix-conditioned decoder measures what a model holds; on masked models it does not,
+because the conditional it probes is not the one the model was trained on
+\citep{mireshghallah2022mlm,wang2026infilling}. The second is that a model which reproduces nothing
+has retained nothing, which \S\ref{sec:ident} contradicts directly.
+
+\paragraph{Tokenisation as a cause.}
+That byte-pair vocabularies increase memorisation in text was shown by
+\citet{kharitonov2021bpe}, who attribute the effect to the shorter token sequences a larger
+vocabulary produces. In text the two cannot be separated: changing the vocabulary changes what a
+token \emph{means}, and the vocabulary co-adapts to the corpus. DNA is the setting where the axis is
+clean --- a closed four-letter alphabet means every tokenizer is a lossless view of identical
+content, and sequence length can be held fixed while granularity varies. Our results support the
+dependence on token granularity and locate the mechanism elsewhere than
+\citet{kharitonov2021bpe} propose: not in sequence length, but in how many positions must be decoded
+correctly at once (\S\ref{sec:slots}).
+
+\paragraph{Genomic privacy.}
+Membership inference against genomic data predates language models, developed for allele-frequency
+releases and summary statistics \citep{li2013membership}, with reconstruction from released
+statistics following \citep{tramer2015bounded}. That line assumes an adversary who sees aggregates.
+The adversary here sees weights, which is a newer object and a stronger one: it is queryable without
+limit and it was fitted to the individuals, not to a summary of them.
+
+\paragraph{The study this extends.}
+\citet{nemecek2026quantifying} fine-tunes four released genomic models --- DNABERT-2, HyenaDNA, a
+12.9M \texttt{SimpleDNALM} and Evo --- on four corpora, and reports that they memorise to very
+different degrees. It does not isolate a cause, and its comparison varies architecture, parameter
+count, pretraining objective and tokenizer together. We hold the first three fixed where we can,
+use its \texttt{SimpleDNALM} as our controlled backbone so the two sets of numbers are comparable,
+and add the measurement machinery that \S\ref{sec:measure} argues the question requires. Where that
+study reports a single extraction rate per model, we report what each of three decoders reads from
+the same weights, which is what revealed that the ordering depends on the instrument.
+
+\paragraph{Scoring.}
+Pseudo-log-likelihood \citep{salazar2020pll} gives a masked model a sequence score an adversary can
+compute without the answer, which is what lets a search over reconstructions choose among its own
+fixed points. Recent work on infilling and diffusion decoders
+\citep{wang2026infilling,luo2026diffusion} and on the dynamics of memorisation during training
+\citep{vonarx2026dynamics} is concurrent with ours and complementary: it asks how to decode better,
+where we ask what a decoder's failure licenses one to conclude.

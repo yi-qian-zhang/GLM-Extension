@@ -1,0 +1,41 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{Limitations.}
+Two chromosomes of one cohort, and current foundation models are larger than the 117M we audit,
+where capacity is known to matter \cite{morris2025capacity}; our own scale control reaches 59.9M.
+Equal supervised tokens is one definition of matched compute and equal attention cost is another,
+and we report the first with the wall clock beside it. The character-level result is a statement about matched rounds and about the utility optimum, not an
+impossibility claim. On chromosome~22 the released $k$-mer family is not ordered by $k$ under either
+normalisation and the two disagree, so we base no ordering on that dataset
+(Sec.~\ref{sec:published}); its thresholded extraction rate is not monotone in $k$ either, and we
+have no mechanism for that. Our canaries are contiguous haplotype segments, and whether the rarity
+mechanism predicts leakage for records of a different shape, such as sparse variant panels, is open.
+Finally, the size of the large-vocabulary excess is sensitive to how the embedding is parametrised,
+for an identical function class; the character-to-\kmer{3} step and the objective effect are not.
+
+\paragraph{Future work.}
+Parameter-efficient fine-tuning interacts with our mechanism in a way we cannot predict: LoRA
+restricts which parameters can absorb a record, and the tokeniser determines how rare the tokens are
+that would have to absorb it. The mechanism also suggests a predictor that needs no training --- the
+corpus frequency of the tokens spelling a record is computable from the tokeniser and the corpus
+alone --- which would let an auditor rank candidate tokenisers before spending a GPU hour. And
+differential privacy and these settings are complementary rather than alternative; the right
+comparison is at matched utility, which needs its own study.
+
+\paragraph{Ethics and data.}
+Every input is public. 1000~Genomes phase~3 is consented for open distribution, and the canaries are
+built from released genotypes rather than any private cohort. We report aggregate recovery rates and
+publish neither reconstructed haplotypes nor carrier identifiers. The attack needs only query access
+to a fine-tuned model, which is what a released checkpoint grants, and we describe it so that groups
+releasing checkpoints trained on cohort data can test for it before release.
+
+\paragraph{Conclusion.}
+Memorisation in a genomic language model is not an accident of a particular release: it follows from
+the training objective and from how finely DNA is cut, both chosen before training begins. It is
+invisible to every utility measurement a practitioner would normally take --- the held-out-loss
+optimum sits one snapshot from complete reproduction, and six standard downstream tasks do not move
+across that boundary --- and on real human sequence what comes back is the carrier's rare alleles,
+for records that appear once. The two settings that reduce it are available in advance and, in our
+experiments, cost nothing in held-out accuracy: train with a masked objective wherever generative
+output is not required, and tokenise as finely as the compute budget allows.

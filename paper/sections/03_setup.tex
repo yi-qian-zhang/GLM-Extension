@@ -1,0 +1,49 @@
+\section{Measurement setup}
+\label{sec:setup}
+
+\paragraph{What we plant, and how we read it.}
+A \emph{canary} is a 96\nt{} sequence inserted into the fine-tuning set $r \in \{0,1,4,16\}$ times,
+each copy at an independently drawn offset inside its own 288\nt{} host window; $r=0$ canaries are
+the control. Drawn offsets matter: with every copy at the same offset a model can score the canary
+by position alone, which inflates every metric (Appendix~A4). On synthetic data a canary is uniform
+random sequence; on chromosome~22 it is a real haplotype segment carrying rare variants
+(Sec.~\ref{sec:human}). Three rulers, all per nucleotide. \textbf{Surprise}: $-\log_2 p$ divided by
+the nucleotides scored, so a model that has learned nothing scores exactly 2.000~\bits{} on uniform
+DNA and every tokeniser is on the same scale. Masked models are scored both by pseudo-log-likelihood
+\cite{salazar2020pll} and by a prefix-conditioned scorer, because they disagree at low mask rates
+(Appendix~A1). \textbf{Recognition}: the rank of the canary among 100 candidates, which on real data
+must themselves be real rare segments --- against random DNA any real sequence wins and a non-member
+ranks first regardless of membership. \textbf{Extraction}: reveal the first 48\nt{} and decode the
+rest greedily, counting only all-48-correct, so the chance rate is $4^{-48}$ and the observed
+non-member rate is zero throughout.
+
+\paragraph{Comparing models fairly.}
+Coarse tokenisers overfit sooner, so a table at a fixed round conflates ``memorises more'' with
+``gets there first''. Comparisons are therefore at \emph{matched held-out loss}: each model's canary
+score is interpolated onto a common grid of held-out loss on the overfitting branch. On real data we
+report
+\[
+  \excess \;=\; (\text{non-member \bits}) - (\text{member \bits}),
+\]
+because a real canary is ordinary sequence and part of its score is biology the model legitimately
+learned; on synthetic data the control sits at 2.000~\bits{} and \excess{} reduces to the usual
+reading.
+
+\paragraph{Models and data.}
+Every cell of the controlled grid uses one backbone: 12.9M parameters, $d=512$, 4 layers, 8 heads,
+pre-LN, tied embeddings, and 12.61M non-embedding parameters in every cell, so only the embedding
+table changes with the vocabulary (Appendix~A3). The released models are DNABERT \kmer{3} to
+\kmer{6} \cite{ji2021dnabert}, DNABERT-2 \cite{zhou2024dnabert2} and HyenaDNA medium
+\cite{nguyen2023hyenadna}. Data: synthetic uniform DNA, where chance is exactly 2.000~\bits;
+\emph{E.~coli} K-12 MG1655 \cite{blattner1997ecoli}; \emph{S.~cerevisiae} S288C
+\cite{engel2014yeast}; the GUE human promoter set \texttt{prom\_300\_all} \cite{zhou2024dnabert2};
+and human chromosome~22 with 1000~Genomes phase~3 variants \cite{thousandgenomes2015}. Windows are
+288\nt{} and non-overlapping, so no held-out window shares a nucleotide with a training window.
+
+\paragraph{One distinction that matters.}
+DNABERT tokenises with \emph{overlapping} $k$-mers at stride~1, so a 288\nt{} window is 283--286
+tokens whatever $k$ is: changing $k$ changes the vocabulary and the redundancy between neighbouring
+tokens, not how many slots carry a record. Our controlled tokenisers are \emph{non-overlapping}, so
+$k$ changes the slots per canary (96, 32, 24, 16) and their rarity. These are different axes: the
+causal claims come from the controlled grid, and the released family answers the model-level
+question of whether the published checkpoints differ.

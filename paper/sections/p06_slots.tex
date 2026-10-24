@@ -1,0 +1,85 @@
+% Privacy-first section 6: what decides whether a memorised record can be reached.
+% Budget 1.5 pages including Table~\ref{tab:slots} and Figure~\ref{fig:slots}.
+% Numbers: outputs/kcurve300 (window 300, k=1..6) replicated by outputs/kcurve (window 288);
+% DNABERT family from outputs/dnabert_long/*_human_s0, re-measured 23 Oct. Notes 3.58(f), 3.59.
+\section{What decides whether a leak can be reached}
+\label{sec:slots}
+
+Released models differ enormously in how much comes back out of them, and the obvious explanation
+--- that some memorise more than others --- is wrong. This section shows that what varies is not how
+much is stored but how many pieces have to be correct simultaneously to get it out, and that this is
+set by the tokenizer.
+
+\paragraph{The same knowledge, 92\% or 0\% out.}
+Hold the backbone, the corpus, the optimiser and the schedule fixed, and vary only how the DNA is
+split. Hiding 48 nucleotides then occupies $48/k$ token slots, and every slot has to be right at the
+same time for the record to come back whole. Table~\ref{tab:slots} reads each run at matched held-out
+loss rather than at a matched epoch, because the tokenizers converge at very different rates: at
+round~30 every $k\ge3$ has saturated at 100\% and the comparison says nothing at all.
+
+Two things in that table carry the claim. The extraction rate is monotone in the slot count with no
+exception across six cut sizes, and the loss it costs to reach full extraction falls monotonically in
+the same direction: 4.07\,\bits{} at 16 slots, 2.99 at 12, 2.63 at 9.6, 2.47 at 8, and never reached
+at 24 or 48. A coarse tokenizer does not merely leak more. It leaks more cheaply, in the same
+currency \S\ref{sec:leak} prices released checkpoints in.
+
+\begin{table}[t]
+\centering
+\caption{From-scratch backbone, next-token objective, three seeds, uniform DNA, read at matched
+held-out loss. \emph{Slots} is $48/k$, the number of token positions the hidden 48 nucleotides
+occupy. \emph{Cost of 100\%} is the held-out loss at which extraction first reaches saturation.
+Never-trained controls read $0.00$ in every tokenizer at every snapshot.}
+\label{tab:slots}
+\begin{tabular}{lcccccc}
+\toprule
+tokenizer & slots & @2.05 & @2.10 & @2.20 & @2.40 & cost of 100\% \\
+\midrule
+character        & 48  & ---  & ---  & ---  & ---  & never \\
+\kmer{2}         & 24  & 0\%  & 0\%  & 0\%  & 0\%  & never \\
+\kmer{3}         & 16  & 0\%  & 0\%  & 0\%  & 2\%  & 4.07 \\
+\kmer{4}         & 12  & 0\%  & 0\%  & 2\%  & 12\% & 2.99 \\
+\kmer{5}         & 9.6 & 0\%  & 2\%  & 24\% & 61\% & 2.63 \\
+\kmer{6}         & 8   & 1\%  & 17\% & 67\% & 92\% & \textbf{2.47} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The character rows are empty because the character model never reaches the comparison points: its
+held-out loss stays between 2.00 and 2.04 for thirty epochs and its extraction rate stays at zero
+throughout. It does not resist extraction after overfitting; it does not overfit far enough to be
+asked.
+
+\paragraph{The effect is not an artefact of the window.}
+A reader may reasonably suspect a geometry that was chosen to make $48/k$ come out neatly. We
+repeated the whole sweep at a second window length, 300\nt{} instead of 288, which changes the number
+of host positions, the number of training tokens per window and the offsets every canary lands on.
+Where the two windows share a tokenizer they agree closely: at matched loss $2.40$, \kmer{3} reads
+2\% against 3\%, \kmer{4} 12\% against 11\%, \kmer{6} 92\% against 91\%, and the cost of full
+extraction is 4.07/2.99/2.47 against 4.15/3.01/2.47. Two independent sets of eighteen and fifteen
+runs, at different geometries, trace the same curve.
+
+\paragraph{A prediction that could have falsified this, and did not.}
+The slot account makes a claim about released models that is easy to check and awkward to explain
+away if it fails. DNABERT ships four checkpoints differing only in $k$ \citep{ji2021dnabert}, which
+looks like the ideal natural experiment --- but its $k$-mers \emph{overlap}, advancing one nucleotide
+at a time, so the slot count stays near 48 whatever $k$ is. The slot account therefore predicts no
+trend in that family at all, in contrast to the strong trend it predicts for non-overlapping
+tokenizers. We recorded that prediction before measuring.
+
+Fine-tuned on chromosome~22 with real haplotype canaries and read with a nucleotide-level decoder
+matched to overlapping spans, the four checkpoints recover 2\%, 0\%, 4\% and 0\% of records planted
+sixteen times, for $k=3,4,5,6$ respectively. There is no trend, as predicted.
+
+\paragraph{The flat row is not ignorance.}
+It would be a misreading to conclude that the overlapping family has memorised nothing. Asked for any
+single nucleotide of a planted record with all the others supplied, those same four checkpoints
+answer correctly 0.99--1.00 of the time, and the implied ceiling on whole-record recovery runs from
+0.70 to 0.87. The records are in there, close to completely; 48 simultaneous slots is simply a wall
+that our search cannot climb. This is the mechanism of \S\ref{sec:slots} appearing in a second place:
+the same quantity that makes a 6-mer model leak at 2.47\,\bits{} makes an overlapping model look
+clean while holding the same content.
+
+Stated carefully, then, the finding is not that finer tokenisation memorises less. Both ends of
+Table~\ref{tab:slots} learn a planted record to the same per-nucleotide accuracy. Coarser
+tokenisation makes what was learned \emph{reachable}, and that is a different sentence to hand a
+practitioner, with a different remedy attached.

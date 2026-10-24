@@ -1,0 +1,18 @@
+% ~200 words. The claim ladder in order. Keep in sync with the contribution list of Sec. 1.
+Genomic language models are released pretrained and fine-tuned locally, increasingly on cohort data,
+and a recent study showed that published models memorise their fine-tuning sequences to very
+different degrees without identifying what causes it. We hold the backbone, the data, the optimiser
+and the schedule fixed and vary two design choices --- how DNA is split into tokens, and whether the
+model predicts the next piece or fills in masked pieces --- measuring planted records by surprise,
+recognition and verbatim extraction, all per nucleotide, and comparing models at matched held-out
+loss rather than at a fixed round. Four results follow. The training objective decides whether whole
+records come back at all: on five datasets every masked cell reproduces nothing --- under a prefix-conditioned
+protocol and under the edge-conditioned infilling protocol that is designed to break it --- while
+every coarse-tokeniser next-token cell reproduces everything, at an equal or better held-out loss. Within
+an objective, memorisation grows with average token length, and the mechanism is that coarse tokens
+are rare in the corpus, not that they are fewer. Neither held-out loss nor six standard genomic
+classification tasks fall while a planted record becomes fully reproducible, so the usual utility
+numbers cannot detect leakage. With real haplotype segments carrying rare 1000~Genomes variants, a
+fine-tuned model returns the carrier's allele far above a matched control, and for the two heaviest
+memorisers a single appearance suffices. The practical consequence is an ordering: the objective is
+the lever, fine tokenisation only delays.

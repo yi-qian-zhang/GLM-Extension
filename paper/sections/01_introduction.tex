@@ -1,0 +1,69 @@
+\section{Introduction}
+\label{sec:intro}
+
+Genomic language models are distributed pretrained and fine-tuned locally. DNABERT
+\cite{ji2021dnabert}, DNABERT-2 \cite{zhou2024dnabert2}, HyenaDNA \cite{nguyen2023hyenadna} and the
+Nucleotide Transformer \cite{dalla2024nucleotide} are released as checkpoints that a group adapts to
+its own sequences, and increasingly those sequences are cohort data. The adapted checkpoint is then
+shared or published, and whatever it retained of the cohort travels with it.
+
+What it retains matters more here than in text. A variant carried by a handful of people is close to
+an identifier, and a model that completes the flanking sequence with the carrier's allele has
+disclosed a genotype at a known locus rather than reproduced a string --- the adversary is not
+guessing a sequence but resolving an allele whose position it already knows
+\cite{li2013membership,tramer2015bounded}.
+
+\cite{nemecek2026quantifying} established that the problem is real: four models --- a 12.9M
+character-level transformer, DNABERT-2, HyenaDNA and Evo at 7B --- on four datasets, with large
+differences in how much of the fine-tuning data comes back, attributed to ``architecture''. That is
+where the question stops, because those four differ in architecture, parameter count by a factor of
+\num{500}, tokenisation, training objective, pretraining corpus \emph{and} fine-tuning strategy all
+at once --- ``architecture'' is a bundle, and a practitioner choosing a model cannot act on it. The closest result in text,
+\cite{kharitonov2021bpe}, showed that a larger subword vocabulary memorises more and conjectured
+that the shorter token sequences are the reason, but in text the two cannot be separated.
+
+DNA separates them, for three reasons that belong to the alphabet rather than to our setup. It is
+closed and four-valued, so a tokeniser is a pure re-grouping of the same information; uniform
+synthetic DNA has an exactly known chance level of \SI{2.000}{\bit\per\nucleotide}, which calibrates
+every measurement against a known zero; and token length can be varied with the token-sequence
+length held fixed. We therefore hold the backbone, the data, the optimiser and the schedule fixed,
+vary how DNA is split into tokens and whether the model predicts the next piece or fills in masked
+pieces, and then check the resulting claims on the released checkpoints. Our contributions:
+
+\begin{enumerate}\itemsep1pt
+  \item \textbf{A controlled decomposition.} One fixed \SI{12.9}{\mega\nothing}-parameter backbone;
+        only the tokeniser, the objective and the position encoding change. Across 24 runs the
+        objective accounts for \NUM{67\%} of the variance in memorisation, the tokeniser for
+        \NUM{12\%}, their interaction for \NUM{21\%} and the seed for \NUM{0\%}.
+  \item \textbf{The objective decides whether records come back at all.} On all five datasets every
+        masked cell reproduces \NUM{0\%} of the planted records and every coarse-tokeniser
+        next-token cell reproduces \NUM{100\%}, with the masked cells at the \emph{better} held-out
+        loss --- under the prefix-conditioned protocol and under the edge-conditioned infilling
+        protocol that recovers up to three times more from bidirectional models
+        \cite{wang2026infilling}. The released DNABERT checkpoints behave the same way under their
+        own masked objective.
+  \item \textbf{Monotonicity in average token length, with a mechanism.} Within an objective,
+        memorisation rises with nucleotides per token on all five datasets. It is not the number of
+        token slots, which predicts the opposite spread, and not sequence length, which we hold
+        fixed; it is how often those tokens occur elsewhere in the corpus.
+  \item \textbf{Utility gives no warning.} A validation loss \NUM{0.004}--\NUM{0.111}~\bits{} from
+        optimal separates \NUM{0\%} from \NUM{51}--\NUM{100\%} verbatim reproduction; four of six
+        GUE tasks \cite{zhou2024dnabert2} move by at most \NUM{0.037} MCC across that transition and
+        the other two move \emph{up}; selecting by downstream score picks the leakiest checkpoint for
+        five of six models.
+  \item \textbf{Real haplotypes, including records seen once.} With canaries that are real
+        chromosome-22 segments carrying rare 1000~Genomes variants \cite{thousandgenomes2015}, every
+        released model returns the carrier's allele for \NUM{92}--\NUM{100\%} of variants in a
+        segment seen sixteen times against a \NUM{23}--\NUM{27\%} control; DNABERT-2 reaches
+        \NUM{85\%} for a segment seen \emph{once} and reproduces \NUM{58\%} of them verbatim, where a
+        membership-ranking audit of the same checkpoints reads as safe.
+  \item \textbf{Two settings, in order of effect.} Prefer a masked objective wherever generative
+        output is not needed; tokenise finely as a second line, which delays first extraction by
+        about an order of magnitude in rounds but does not prevent it.
+\end{enumerate}
+
+We do not claim that any setting makes memorisation impossible --- the character-level tokeniser,
+our tightest cell, reaches complete reproduction when trained long enough, and we report the round.
+We compare at matched held-out loss and equal exposure, not at matched compute. We study one human
+chromosome and models up to \SI{117}{\mega\nothing} parameters, with canaries we plant rather than
+discover, and an adversary assumed to hold the flanking 48\nt{}.

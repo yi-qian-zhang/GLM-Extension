@@ -1,0 +1,103 @@
+% Privacy-first section 4: released models leak at a quality a practitioner would accept.
+% Budget 1.75 pages including Table~\ref{tab:cost} and Figure~\ref{fig:cost}.
+% Every number here is from the single-basis re-measurement of 19-23 Oct; see notes 3.58-3.59.
+\section{Released models leak at a quality you would ship}
+\label{sec:leak}
+
+A model trained until it is useless will memorise, and demonstrating that says nothing. The
+question a practitioner faces is whether leakage appears at a checkpoint they would actually
+choose. We therefore report every leak twice: once as a rate, and once as the held-out loss it
+costs, measured against the best checkpoint that run itself produced. A leak priced at a hundredth
+of a bit is a leak nobody will trade away.
+
+\paragraph{The cheapest leak costs seven thousandths of a bit.}
+Table~\ref{tab:cost} orders the released checkpoints by that price. DNABERT-2 reproduces 30\% of
+planted records at \textbf{+0.007\,\bits} above its own optimum --- a difference no one selecting a
+checkpoint would notice, and none of the six downstream tasks we measure moves by more than one per
+cent across the same interval (\S\ref{sec:blind}). Nucleotide Transformer gives up
+\textbf{+0.03\,\bits} to leak 8--14\% across three seeds. Both are far inside the range a user
+would consider interchangeable with the optimum.
+
+The control is flat throughout. Records the model never saw are reproduced 0\% of the time in every
+cell, every tier and every seed, and the never-trained window at the foot of each block is scored by
+the same decoder on the same host, so the zero is a property of the measurement and not of a
+separate baseline.
+
+\begin{table}[t]
+\centering
+\caption{Released masked checkpoints on \emph{E.~coli}, records planted $16\times$, 50 probes per
+tier, three seeds where shown. \emph{Cost} is held-out \bits{} above that run's own best saved
+checkpoint. \emph{Standard} is the prefix-conditioned protocol the field uses; \emph{ours} is the
+re-masking decoder of \S\ref{sec:measure}. All cells re-measured on one numerical basis.}
+\label{tab:cost}
+\begin{tabular}{llccc}
+\toprule
+checkpoint & corpus & cost & standard & ours \\
+\midrule
+DNABERT-2 117M      & \emph{E.~coli} & \textbf{+0.007} & \textbf{30\%}      & 0\% \\
+NT 250M (3 seeds)   & \emph{E.~coli} & \textbf{+0.03}  & 4 / 8 / 4\%        & \textbf{8 / 8 / 14\%} \\
+NT 250M (3 seeds)   & \emph{E.~coli} & +0.44           & 26 / 26 / 30\%     & \textbf{66 / 68 / 76\%} \\
+NT 500M             & \emph{E.~coli} & +0.46           & 36\%               & \textbf{78\%} \\
+\midrule
+never-trained control & --- & --- & 0\% & 0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The two protocols disagree, and neither dominates.}
+Reading across Table~\ref{tab:cost} shows why a single extraction test cannot carry this
+measurement. On fixed-width non-overlapping tokenisers the standard protocol under-reports by
+roughly a factor of two: at +0.44\,\bits{} it recovers 26--30\% where ours recovers 66--76\%. On
+DNABERT-2 the order reverses completely --- the standard protocol recovers 30\% and ours recovers
+nothing at all. We return to this in \S\ref{sec:measure}; here it matters only that the figures in
+this table are each read with whichever protocol is stronger for that model, so they are lower
+bounds on what an attacker could obtain and not artefacts of one decoder's blind spot.
+
+\paragraph{On real human haplotypes a single copy is enough.}
+The \emph{E.~coli} canaries above are uniform random sequence, which makes them a clean lower bound
+and a fair target for criticism: a random string shares nothing with the statistics of a genome. We
+therefore repeat the measurement with canaries that are real. Each is a 96\nt{} window of human
+chromosome~22 built around a variant carried by at most five of the 2{,}548 individuals in
+1000~Genomes phase~3, written with that carrier's own alleles. Reproducing one is reproducing a
+specific person's rare haplotype, not a string.
+
+\begin{table}[t]
+\centering
+\caption{Nucleotide Transformer fine-tuned on human chromosome~22 with real rare-variant haplotypes
+as canaries. \emph{1 copy} is the realistic case: one individual's haplotype appearing once in the
+fine-tuning set.}
+\label{tab:human}
+\begin{tabular}{lccccc}
+\toprule
+& & \multicolumn{2}{c}{16 copies} & \multicolumn{2}{c}{1 copy} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+checkpoint & held-out \bits & standard & ours & standard & ours \\
+\midrule
+NT 250M, round 15 & 1.145 & 6\%  & 6\%           & 0\% & 0\% \\
+NT 250M, round 30 & 0.739 & 10\% & 28\%          & 0\% & 0\% \\
+NT 250M, round 50 & 0.465 & 18\% & \textbf{52\%} & 2\% & \textbf{8\%} \\
+NT 500M, round 15 & 1.045 & 16\% & 14\%          & 0\% & 0\% \\
+NT 500M, round 50 & 0.396 & 24\% & \textbf{58\%} & 0\% & \textbf{12\%} \\
+\midrule
+never-trained control & --- & 0\% & 0\% & 0\% & 0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:human} is the result we would ask a reader to carry away from this section. A
+haplotype belonging to one person, present exactly once in the fine-tuning data, is returned letter
+for letter 8\% of the time by the 250M model and 12\% by the 500M --- roughly one case in ten, on
+weights anyone can download, with the matched never-trained control at zero. The repeated tier
+behaves as the \emph{E.~coli} arm does, so the single-copy column is not an artefact of a canary
+appearing often enough to be learned as vocabulary.
+
+\paragraph{What the model knows is not what our decoder can reach.}
+One column of Table~\ref{tab:cost} deserves a caution, because it is the one most easily misread.
+Our decoder recovers 0\% from DNABERT-2, and that is not evidence the model holds nothing. Asked for
+any single nucleotide of a planted record with every other nucleotide supplied, DNABERT-2 answers
+correctly 93--95\% of the time for records planted \emph{once}, which puts the implied ceiling on
+whole-record recovery at 0.21--0.39 across three seeds. The information is demonstrably present; our
+search does not find it, because a variable-length tokenisation re-segments the sequence on every
+proposal and leaves the search no foothold. A decoder matched to that vocabulary --- the standard
+protocol is one --- reaches 30\%. Reporting the smaller of two numbers as the model's exposure is the
+error this paper exists to document, and we are careful not to commit it ourselves.

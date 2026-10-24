@@ -1,0 +1,68 @@
+\section{Utility gives no warning}
+\label{sec:utility}
+
+\paragraph{The held-out-loss optimum is a knife edge, not a margin.}
+Early stopping is the one defence a practitioner already applies. At its own best held-out loss
+every released model except the \kmer{3} reproduces \NUM{0\%} of the planted records, so stopping
+exactly there does avoid verbatim extraction --- and that is the whole of the good news. The optimum
+is almost flat in the loss and almost vertical in the leakage: one snapshot later costs HyenaDNA
+\NUM{0.004}~\bits{} and takes it from \NUM{0\%} to \NUM{69\%} extraction, with the corresponding
+gaps \NUM{0.032}~\bits{} to \NUM{100\%} for DNABERT-2, \NUM{0.039} to \NUM{51\%} for the \kmer{4},
+\NUM{0.046} to \NUM{84\%} for the \kmer{5}, and \NUM{0.111} to \NUM{95\%} for the \kmer{6}
+(Table~\ref{tab:stopping}). A validation loss within five hundredths of a bit of optimal is what
+anyone would call converged, and inside that band sits every outcome from no leakage to complete
+reproduction. The optimum is not clean on the other rulers either: recognition there is already
+\NUM{4\%} for the \kmer{4}, \NUM{28\%} for the \kmer{5}, \NUM{52\%} for the \kmer{3}, \NUM{80\%} for
+DNABERT-2 and \NUM{88\%} for the \kmer{6}. \textbf{Stopping at the optimum suppresses what the model
+writes, not what it knows.}
+
+\begin{table}[t]
+\centering
+\caption{What a practitioner's stopping rule selects. Next-token fine-tuning on the GUE promoter
+set, three seeds; verbatim extraction of the $16\times$ canary at three candidate stopping points,
+with the held-out loss or mean downstream MCC that would justify each choice.}
+\label{tab:stopping}
+\begin{tabular}{lccccc}
+\toprule
+& \multicolumn{2}{c}{best held-out loss} & \multicolumn{2}{c}{best downstream MCC} & last round \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-6}
+model & round (loss) & extracted & round (MCC) & extracted & extracted \\
+\midrule
+DNABERT \kmer{3} & 30 (1.916) & 6\%  & 30 (0.655) & 6\%   & 37\% \\
+DNABERT \kmer{4} & 15 (1.920) & 0\%  & 50 (0.663) & 51\%  & 51\% \\
+DNABERT \kmer{5} & 15 (1.928) & 0\%  & 50 (0.654) & 84\%  & 84\% \\
+DNABERT \kmer{6} & 15 (1.916) & 0\%  & 30 (0.663) & 44\%  & 95\% \\
+DNABERT-2 (BPE)  &  3 (1.941) & 0\%  & 30 (0.642) & 100\% & 100\% \\
+HyenaDNA medium  &  3 (1.913) & 0\%  & 50 (0.626) & 81\%  & 81\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Six downstream tasks do not warn either.}
+At every snapshot we attach a classification head and fine-tune it on a GUE task
+\cite{zhou2024dnabert2}: promoter detection, core promoters, transcription-factor binding and splice
+sites in human, and the H3 and H3K4me3 histone marks in yeast. Over 50 rounds, while the planted
+record goes from unmemorised to \NUM{37}--\NUM{100\%} verbatim reproduction, four of the six tasks
+move by at most \NUM{0.037} MCC in either direction, which is within what we measure between seeds.
+The two that move --- splice sites (\NUM{+0.02} to \NUM{+0.15}) and H3K4me3 (\NUM{+0.03} to
+\NUM{+0.11}) --- move \emph{upward} as leakage grows, so a practitioner watching them is told to keep
+training; transcription-factor binding drifts down for three models by at most \NUM{0.036}. None of
+those three readings distinguishes a checkpoint at \NUM{0\%} extraction from the same model at
+\NUM{95\%} (Appendix~A6).
+
+\paragraph{Selecting by downstream score picks the leakiest checkpoint.}
+For five of six models the best downstream mean is at round~30 or~50, where the leakage is:
+\NUM{44}--\NUM{100\%} extraction, against \NUM{0}--\NUM{6\%} at the loss optimum of the same model
+(Table~\ref{tab:stopping}). Only the \kmer{3} selects the same round under both rules. The frozen
+linear probe behaves differently, peaking early and tracking the held-out loss, but it moves by at
+most \NUM{0.03} MCC in total --- too little to act on. A practitioner selecting on benchmark
+performance therefore lands close to the worst checkpoint for privacy, and one selecting on
+validation loss is one snapshot away from it.
+
+\paragraph{Probe validity.}
+Our fine-tuning is a scaled-down version of the published recipe, so the absolute scores sit below
+the published ones and only the movement within a column is ours to interpret. Five tasks land in
+the published range; yeast H3K4me3 reaches only \NUM{0.22}--\NUM{0.30} and we read that row as a
+weak probe rather than a reproduction. Four of the \NUM{252} (model, round, task) fine-tuning runs
+collapsed to a degenerate head and are excluded and listed in Appendix~A6; that is the only
+exclusion in this paper.

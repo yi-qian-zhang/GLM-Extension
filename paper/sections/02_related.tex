@@ -1,0 +1,51 @@
+\section{Related work}
+\label{sec:related}
+
+\paragraph{Memorisation in genomic models, and tokenisation in text.}
+\cite{nemecek2026quantifying} is the direct predecessor: four models on four datasets under three
+risk scores, showing that they differ and attributing it to architecture. Its most striking result is
+also the one that motivates ours --- Evo, a 7B byte-level model adapted with LoRA, recovers
+\NUM{100\%} of planted canaries on all three real genomes even at a single insertion, where
+DNABERT-2 resists extraction entirely --- because the two differ in scale, tokenisation,
+architecture, objective and fine-tuning strategy at once, so the comparison cannot say which of
+those is responsible. We ask which design choice is, which requires holding everything else fixed
+rather than comparing releases. We reuse its canary construction and two of its datasets so the
+numbers can be read against each other, our controlled backbone is its 12.9M character-level model,
+and we audit a larger panel of released checkpoints in Sec.~\ref{sec:published}. In text,
+\cite{kharitonov2021bpe} showed that a larger BPE vocabulary makes a model reproduce more of its
+training data and conjectured that the shorter token sequences are the cause --- untestable there,
+because re-tokenising changes length by construction. A spaced $k$-mer tokeniser pads each content
+token with unscored filler, so the vocabulary changes while every window stays 288 slots long; the
+coarse-tokeniser behaviour follows the vocabulary, not the length (Appendix~A3). Our contribution is
+not that vocabulary matters but the mechanism, corpus-level token rarity, and the finding that the
+objective dominates the tokeniser.
+
+\paragraph{Measuring memorisation, and scoring masked models.}
+Our three rulers are standard, adapted to a four-letter alphabet with a known chance level: surprise
+per nucleotide is the per-token loss of \cite{carlini2023quantifying} divided by the nucleotides a
+token covers, which is what makes tokenisers comparable; extraction with a revealed prefix is their
+discoverable-extraction protocol; recognition against a candidate pool is canary exposure in the
+sense of \cite{jagielski2023canary}, which warns against reading exposure as a probability, so we
+report the rank-1 rate directly. \cite{tirumala2022memorization} shows memorisation preceding
+overfitting, which is what our matched-held-out-loss comparison controls for, and
+\cite{morris2025capacity} supplies the capacity estimate we use. Masked models have no left-to-right
+likelihood, so we score them by pseudo-log-likelihood \cite{salazar2020pll} and by a
+prefix-conditioned scorer, keeping both because they disagree at low mask rates and calibrating each
+against the \SI{2.000}{\bit\per\nucleotide} chance level (Appendix~A1). \cite{mireshghallah2022mlm}
+attacks masked models with a likelihood-ratio test; our recognition ruler is deliberately weaker,
+and Sec.~\ref{sec:human} shows that this is what matters --- on real haplotypes the $k$-mer
+checkpoints look safe under ranking while reproducing records verbatim.
+
+\paragraph{Infilling objectives and infilling attacks.}
+Three concurrent results in text bear on our objective axis, none of them genomic.
+\cite{vonarx2026dynamics} is the closest analogue of our central comparison: matched Llama 3.2
+models pretrained with fill-in-the-middle against left-to-right, finding that infilling recovers
+short or partial spans more often while left-to-right assigns high confidence to long exact
+continuations --- the direction we measure on DNA --- and that extraction under infilling grows
+roughly linearly with repetitions, which is why we report a repetition tier.
+\cite{luo2026diffusion} derives the generation-side mechanism: extraction probability increases
+monotonically with sampling resolution, with autoregressive decoding as the maximal-resolution
+limit. \cite{wang2026infilling} changes how we measure: prefix-only probing understates extraction
+from models that denoise arbitrary positions, by up to a factor of three on LLaDA-8B and Dream-7B.
+Our extraction ruler is prefix-conditioned, so we re-ask every masked cell in its own idiom and
+report both protocols (Sec.~\ref{sec:mitigation}).

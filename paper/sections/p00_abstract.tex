@@ -1,0 +1,20 @@
+% ~215 words. The claim ladder in the order the paper makes it. Must match the registered
+% abstract, so change this and the contribution list of p01_intro together.
+Genomic language models are released pretrained and fine-tuned locally, increasingly on cohort data.
+We ask what happens to the individuals in that cohort, and measure it on six released models rather
+than on a backbone of our own.
+
+Every released masked checkpoint we tested reproduces planted records verbatim at a held-out loss a
+practitioner would accept: the cheapest costs seven thousandths of a bit and returns 30\% of records.
+On real chromosome-22 haplotypes, each carried by at most five of 2{,}548 individuals, a record
+present as a single copy comes back letter for letter about one time in ten.
+
+Reproduction is the wrong alarm. At checkpoints where verbatim recovery reads exactly zero in every
+seed, the same model ranks one individual's haplotype first against a hundred real rare segments
+0.92 to 0.96 of the time, with none of 350 never-trained controls ever identified. Downstream task
+score moves one to two per cent across the same range.
+
+Whether a memorised record can be reached at all is set by how many token slots it occupies, not by
+how much the model knows: models differing only in tokenisation answer any single hidden nucleotide
+identically and yet return 92\% or 0\% of whole records. No single extraction test is correct across
+tokenizers, which is why this has been missed. Code, measurements and logs are public.

@@ -1,0 +1,81 @@
+% Privacy-first section 3: threat model, data, and what is measured.
+% Budget 1.25 pages including Figure~\ref{fig:probe}. Everything later references \S\ref{sec:measure}.
+\section{Threat model, data, and what we measure}
+\label{sec:measure}
+
+\paragraph{Threat model.}
+A laboratory downloads a released genomic language model and fine-tunes it on a cohort it holds, then
+publishes or shares the fine-tuned weights. The adversary has those weights and can query them
+freely, but has no access to the fine-tuning set. We ask two questions of that adversary. Can they
+recover a cohort member's sequence verbatim, and --- given a candidate sequence --- can they tell
+whether it was in the fine-tuning set? Both are white-box and neither requires the training data,
+which is what distinguishes this setting from the reconstruction literature on released
+summary statistics \citep{li2013membership,tramer2015bounded}.
+
+\paragraph{Models.}
+Six released checkpoints spanning the three ways DNA is tokenised. Nucleotide Transformer v2 at 250M
+and 500M cuts six nucleotides per token without overlap \citep{dalla2024nucleotide}; DNABERT ships
+four checkpoints at $k=3,4,5,6$ whose $k$-mers overlap, advancing one nucleotide at a time
+\citep{ji2021dnabert}; DNABERT-2 uses byte-pair encoding, so token length varies with content
+\citep{zhou2024dnabert2}. HyenaDNA, a single-nucleotide causal model \citep{nguyen2023hyenadna}, and
+a 12.9M transformer we train from scratch serve as controls --- the latter because it is the only
+model in which the tokenizer can be changed with everything else held fixed, and because it is the
+same architecture as the \texttt{SimpleDNALM} of the study this work extends
+\citep{nemecek2026quantifying}, which makes the two sets of numbers comparable.
+
+\paragraph{Canaries.}
+A canary is a 96\nt{} sequence planted in the fine-tuning corpus 1, 4 or 16 times, each copy at an
+independently drawn offset inside a longer 288\nt{} host window. Random placement matters: with a
+fixed offset the model can memorise a position rather than a sequence, which inflates every
+statistic we report. For the synthetic arm canaries are uniform over $\{A,C,G,T\}$, which makes the
+measurement a clean lower bound. For the human arm each canary is a real window of chromosome~22
+centred on a variant carried by at most five of the 2{,}548 individuals of 1000~Genomes phase~3
+\citep{thousandgenomes2015}, written with that carrier's own alleles. Corpora are \emph{E.~coli}
+K-12 \citep{blattner1997ecoli}, yeast S288C \citep{engel2014yeast}, human chromosomes 21 and 22, and
+the GUE promoter set.
+
+\paragraph{Three rulers, and why one decoder is not enough.}
+We reveal the first 48 nucleotides of a canary and ask for the remaining 48, scoring three things:
+the teacher-forced surprise of the true continuation in \bits; \emph{identification}, whether the
+model ranks the planted record first against 100 other real segments drawn from the same pool; and
+\emph{verbatim extraction}, whether all 48 target nucleotides come back exactly
+\citep{carlini2023quantifying}.
+
+Extraction is where the measurement becomes delicate, because what ``one piece at a time'' means
+depends on the tokenizer, and we use three decoders accordingly. The \emph{standard} protocol is
+prefix-conditioned generation, which is also one model family's own training task. Our
+\emph{re-masking} decoder hides the target, re-masks one token at a time and sweeps to a fixed point
+from 128 restarts, choosing its output by pseudo-log-likelihood \citep{salazar2020pll}, which an
+attacker can compute without the answer \citep{mireshghallah2022mlm}. For overlapping $k$-mers one
+token at a time is undefined, so a third decoder works at nucleotide level; for byte-pair encoding a
+fourth re-tokenises each candidate and normalises by the nucleotides a span covers.
+
+No one of these dominates. On fixed-width tokenizers the standard protocol under-reports by about a
+factor of two; on overlapping and variable-length ones it is our decoder that reads zero where the
+standard protocol succeeds (\S\ref{sec:leak}). Every extraction figure in this paper is therefore
+read with whichever decoder is stronger for that model, making it a lower bound on what an adversary
+could obtain. Where a decoder fails we check whether the information is nonetheless present, using
+the leave-one-out probe --- every other target nucleotide supplied, one masked --- whose per-token
+accuracy raised to the number of slots bounds what any decoder of this kind could achieve.
+
+\paragraph{Comparing at matched loss, not matched epoch.}
+Tokenizers converge at very different rates, so a table read after a fixed number of epochs compares
+models at different points on their own curves; by epoch 30 every $k\ge3$ has saturated and the
+comparison is empty. We therefore interpolate every run to a common held-out loss and read it there.
+Where a leak is priced, the price is \bits{} above that run's own best saved checkpoint, so each
+model is its own baseline.
+
+\paragraph{Two sources of uncertainty, one of them unusual.}
+Each rate is over 50 probes per tier, which carries the obvious binomial interval. A second source is
+specific to the search decoder and we report it because it is not small. The re-masking decode is a
+discrete iteration: a single argmax resolving differently sends a restart to a different fixed point.
+Re-running the identical cell after the host's floating-point behaviour changed moved the extraction
+rate by six points, which is the same order as the binomial standard error on 50 probes --- so an
+interval quoting only the probe count understates the real uncertainty by roughly a factor of two.
+Identification does not share this: it is a ranking, and rankings flip only when two candidates score
+almost identically. Re-scoring reproduced every identification rate to the digit and the held-out
+loss to four decimals. We attach the wider uncertainty to extraction rates and not to identification
+rates.
+
+Every cell backing a claim in this paper was measured on one machine state. Controls are never-trained
+records of the same construction, scored by the same decoder in the same run.

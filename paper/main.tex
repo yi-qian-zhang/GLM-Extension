@@ -1,0 +1,98 @@
+% What makes a genomic language model memorise?  --  RECOMB 2027 submission.
+%
+% RULES TAKEN FROM THE 2027 CALL (recomb.org/recomb2027/call_for_papers, read 9 Oct 2026):
+%   * abstract due 28 Oct 2026 23:59 AoE, full paper 4 Nov 2026, notification 22 Dec 2026,
+%     conference 17-20 May 2027.
+%   * 10 pages maximum, Letter, INCLUDING all figures, tables and captions; bibliography excluded.
+%   * minimum 10pt font and 1-inch margins; PDF; no required template (LNCS optional).
+%   * one extra title page with title, authors and abstract is allowed and does not count.
+%   * single-blind: do NOT anonymise.
+%   * optional appendix as a SEPARATE PDF with no page limit -> appendix.tex, built on its own.
+%   * a paper with new software must link a public, documented repository IN the paper.
+%   * at most 4 submissions per author; the registered abstract must match the final paper.
+%   * accepted papers must be posted to bioRxiv/arXiv by the final-version deadline.
+%
+% PAGE BUDGET for the 10 content pages, privacy-first (notes/21_privacy_first_plan.md):
+%   1 intro                        1.00    5 identification (1 table)     1.50
+%   2 background + related         0.75    6 slot count (1 table, 1 fig)  1.50
+%   3 threat model + measurement   1.25    7 practice + blind metric      1.25
+%   4 leak at usable quality       1.75    8 limitations + discussion     0.75
+%   slack 0.25. Five figures is already 1.25-1.5 of the ten; F1 (probe geometry) is the
+%   first to cut, and fig:slots is load-bearing and may not move to the appendix.
+%
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}          % tab:objaxis pairs two objective rows per dataset
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{subcaption}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{authblk}
+
+\graphicspath{{figures/}}
+\sisetup{detect-all, group-minimum-digits=4}
+\renewcommand{\arraystretch}{1.05}
+
+% ---------------------------------------------------------------- shared macros
+\newcommand{\bits}{bits/nt}                       % every score is per nucleotide
+\newcommand{\nt}{\,nt}
+\newcommand{\kmer}[1]{#1-mer}
+\newcommand{\excess}{\ensuremath{\Delta}}         % non-member bits minus member bits
+\newcommand{\TODO}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\NUM}[1]{\textcolor{blue}{#1}}        % number still pending a run; must be black at submission
+\newcommand{\CODEURL}{\TODO{public repository URL -- required by the call}}
+
+\title{\textbf{Released Genomic Language Models Identify the People\\They Were Fine-Tuned On}\\[2pt]
+\large Reproduction Is the Wrong Alarm, and Tokenisation Explains Why}
+\author[1]{Yiqian Zhang}
+\author[1]{Alexander Nemecek}
+\author[1]{\TODO{co-authors and order to be agreed}}
+\author[1]{Erman Ayday}
+\affil[1]{Department of Computer and Data Sciences, Case Western Reserve University, Cleveland, OH, USA}
+\date{}
+
+\begin{document}
+
+% ---- extra title page (allowed by the call, does not count against the 10 pages)
+\begin{titlepage}
+\maketitle
+\thispagestyle{empty}
+\begin{abstract}
+\input{sections/p00_abstract}
+\end{abstract}
+\vfill
+\noindent\textbf{Code and data.} \CODEURL. All inputs are public: 1000~Genomes phase~3 (chr22,
+GRCh38), the GUE benchmark, and the reference genomes of \emph{E.~coli} K-12 MG1655 and
+\emph{S.~cerevisiae} S288C.
+\end{titlepage}
+
+\setcounter{page}{1}
+
+% Privacy-first structure, settled 19 Oct: the privacy results lead and the tokenisation and
+% measurement work supports them. The objective-first draft is kept in main_objective_first.tex.bak
+% and sections/0*_*.tex until this one is checked end to end.
+\input{sections/p01_intro}
+\input{sections/p02_related}
+\input{sections/p03_setup}
+\input{sections/p04_leak}
+\input{sections/p05_identify}
+\input{sections/p06_slots}
+\input{sections/p07_practice}
+\input{sections/p08_discussion}
+
+\paragraph{Acknowledgements.}
+\TODO{funding and compute}
+
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}

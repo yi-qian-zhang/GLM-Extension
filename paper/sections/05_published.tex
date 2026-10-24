@@ -1,0 +1,74 @@
+\section{Does it hold for the released models?}
+\label{sec:published}
+
+\paragraph{The DNABERT family is ordered on three genomes.}
+Table~\ref{tab:dnabert} fine-tunes the four released $k$-mer checkpoints on three real datasets with
+three seeds each. Both the smooth and the thresholded statistic rise monotonically with $k$.
+
+\begin{table}[t]
+\centering
+\caption{Released checkpoints, next-token fine-tuning, round~50, canary planted $16\times$, three
+seeds. Canary surprise in \bits{} and verbatim extraction rate.}
+\label{tab:dnabert}
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{2}{c}{\emph{E.~coli}} & \multicolumn{2}{c}{yeast} & \multicolumn{2}{c}{GUE promoters} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+model & \bits & exact & \bits & exact & \bits & exact \\
+\midrule
+DNABERT \kmer{3} & 1.60 & 0\%   & 0.76 & 68\%  & 1.53 & 5\%   \\
+DNABERT \kmer{4} & 0.88 & 33\%  & 0.56 & 78\%  & 1.00 & 23\%  \\
+DNABERT \kmer{5} & 0.59 & 55\%  & 0.36 & 100\% & 0.51 & 68\%  \\
+DNABERT \kmer{6} & 0.30 & 98\%  & 0.21 & 100\% & 0.29 & 90\%  \\
+\midrule
+DNABERT-2 (BPE)  & 0.05 & 100\% & 0.05 & 100\% & 0.04 & 100\% \\
+HyenaDNA medium  & 0.12 & 77\%  & 0.12 & 82\%  & 0.11 & 83\%  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Two models break the ordering from outside the tokeniser axis.}
+DNABERT-2 memorises more than any $k$-mer checkpoint, and HyenaDNA, which is character level,
+memorises more than the \kmer{5}. Neither contradicts Sec.~\ref{sec:controlled}. DNABERT-2 has 117M
+parameters against 86--89M, ALiBi instead of learned absolute positions, and a different pretraining
+corpus; on a matched backbone a BPE vocabulary of the same average piece length sits between the
+\kmer{3} and the \kmer{6}. HyenaDNA differs in architecture and pretraining, not in tokenisation.
+This is precisely why the causal claim needs the controlled grid: the released family alone cannot
+support it, and reading these rows as a tokeniser effect would be the mistake we are trying to
+correct.
+
+\paragraph{On human chromosome~22 the $k$-mer family is not ordered, and we say so.}
+The fourth dataset breaks the pattern of Table~\ref{tab:dnabert}, and four independent draws of the
+canary split do not resolve it. At equal exposure (round~50) \excess{} rises weakly with $k$ ---
+\NUM{1.45}, \NUM{1.51}, \NUM{1.50}, \NUM{1.68} for $k=3,4,5,6$, with an across-draw spread of
+\NUM{0.04}--\NUM{0.07} that separates the \kmer{6} from the \kmer{3} but leaves $k=4$ and $k=5$
+tied. At matched held-out loss the direction reverses: \NUM{1.48}, \NUM{1.06}, \NUM{1.01},
+\NUM{1.37}, with the \kmer{3} highest, because it overfits chromosome~22 most slowly and matching
+the loss gives it the most exposure to the planted records. The six rising branches overlap in a
+window \NUM{0.005}~\bits{} wide, which leaves no ground to prefer either normalisation, and the
+extraction rate is not monotone either (\NUM{94}, \NUM{87}, \NUM{78}, \NUM{88\%}). \textbf{We
+therefore base no tokeniser ordering on chromosome~22.} What is robust there comes from outside the
+tokeniser axis: DNABERT-2 (\NUM{2.35}) and HyenaDNA (\NUM{2.39}) sit above the entire $k$-mer family
+under both readings and on every draw, as on the other three datasets.
+
+\paragraph{Why the canary split is drawn four times.}
+Which canaries are members is fixed by one data seed, so within an arm it is the same split for
+every model, and with real haplotypes the pretrained checkpoints already read the member group as
+easier before any fine-tuning --- up to \NUM{0.9}~\bits{} on a single draw. Re-drawing the split
+four times shows that this offset must \emph{not} be subtracted: it is gone after one epoch
+(\excess{} at round~1 is \NUM{0.00}$\pm$\NUM{0.05} on every draw), it propagates with a slope of
+only \NUM{0.05}--\NUM{0.19}, and subtracting it inflates the across-draw spread from
+\NUM{0.04}--\NUM{0.11} to \NUM{0.15}--\NUM{0.39} (Appendix~A9). Every number in this section and in
+Sec.~\ref{sec:human} is therefore uncorrected, with the across-draw spread as its error bar.
+
+\paragraph{Chromosome 21 says the same thing, including the part we cannot explain.}
+We repeated the whole panel on a second chromosome, with canaries built from chromosome~21 by the
+same filter (400 segments, 365 carriers) and two seeds for the $k$-mer family. Everything that
+matters reproduces. Rare-allele recovery at $r{=}16$ is \NUM{0.84}--\NUM{1.00} against a
+\NUM{0.23}--\NUM{0.29} control; DNABERT-2 again leaks a record seen \emph{once}, recovering
+\NUM{77\%} of its rare alleles against a \NUM{27\%} control and reproducing \NUM{44\%} of those
+segments verbatim, while no $k$-mer checkpoint extracts a single-copy record. And the anomaly
+reproduces too: verbatim extraction at $r{=}16$ is \NUM{79}, \NUM{68}, \NUM{48}, \NUM{91\%} for
+$k=3,4,5,6$, the same non-monotone shape with the same \kmer{5} dip we report on chromosome~22. An
+artefact of one chromosome would not survive the change of chromosome; we still have no mechanism
+for it, and we still base no ordering on it.

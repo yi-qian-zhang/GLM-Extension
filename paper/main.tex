@@ -39,6 +39,10 @@
 \usepackage{subcaption}
 \usepackage[font=small,labelfont=bf]{caption}
 \usepackage{authblk}
+% natbib, because the whole draft cites with \citep/\citet. Without it every citation is an
+% undefined control sequence, the key is printed into the running text and the bibliography
+% comes out empty: 28 errors in the Overleaf log of 23 Oct, all of them this.
+\usepackage[numbers,sort&compress]{natbib}
 
 \graphicspath{{figures/}}
 \sisetup{detect-all, group-minimum-digits=4}
@@ -95,7 +99,7 @@ GRCh38), the GUE benchmark, and the reference genomes of \emph{E.~coli} K-12 MG1
 \paragraph{Acknowledgements.}
 \TODO{funding and compute}
 
-\bibliographystyle{plain}
+\bibliographystyle{plainnat}
 \bibliography{refs}
 
 \end{document}
